@@ -35,7 +35,7 @@ impl Dependencies {
 }
 
 fn detect_js_runtime() -> Option<String> {
-    for rt in &["deno", "bun", "node"] {
+    for rt in &["node", "bun"] {
         if which::which(rt).is_ok() {
             return Some((*rt).to_string());
         }

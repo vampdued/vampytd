@@ -467,6 +467,8 @@ pub fn execute_download(
     cmd.arg("--convert-thumbnails").arg("png");
 
     if !is_audio {
+        cmd.arg("--merge-output-format").arg("mkv");
+        cmd.arg("--remux-video").arg("mkv");
         cmd.arg("--embed-subs");
         cmd.arg("--sub-langs").arg("en.*,en");
     }
@@ -521,6 +523,8 @@ pub fn execute_playlist_download(
     cmd.arg("--convert-thumbnails").arg("png");
 
     if !is_audio {
+        cmd.arg("--merge-output-format").arg("mkv");
+        cmd.arg("--remux-video").arg("mkv");
         cmd.arg("--embed-subs");
         cmd.arg("--sub-langs").arg("en.*,en");
     }

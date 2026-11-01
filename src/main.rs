@@ -78,6 +78,32 @@ fn main() -> Result<()> {
     run_cli(cli)
 }
 
+fn set_terminal_title(title: &str) {
+    use std::io::Write;
+    print!("\x1b]0;VampYTD: {}\x07", title);
+    let _ = std::io::stdout().flush();
+}
+
+fn print_download_banner(
+    title: &str,
+    uploader: Option<&str>,
+    format_str: &str,
+    dest_dir: &std::path::Path,
+    is_audio: bool,
+) {
+    let uploader_str = uploader.unwrap_or("YouTube");
+    let container = if is_audio { "Audio (Native/Opus/M4A)" } else { "MKV (Matroska Universal)" };
+    println!();
+    println!("\x1b[31;1m================================================================================\x1b[0m");
+    println!("\x1b[1;37m>> Title:       \x1b[0m\x1b[33;1m{}\x1b[0m", title);
+    println!("\x1b[1;37m>> Channel:     \x1b[0m\x1b[36m{}\x1b[0m", uploader_str);
+    println!("\x1b[1;37m>> Stream:      \x1b[0m\x1b[32;1m{}\x1b[0m", format_str);
+    println!("\x1b[1;37m>> Container:   \x1b[0m\x1b[35;1m{}\x1b[0m", container);
+    println!("\x1b[1;37m>> Destination: \x1b[0m\x1b[34m{}\x1b[0m", dest_dir.display());
+    println!("\x1b[31;1m================================================================================\x1b[0m");
+    println!();
+}
+
 fn run_cli(cli: Cli) -> Result<()> {
     println!("\x1b[31;1m>> VampYTD v{}\x1b[0m", env!("CARGO_PKG_VERSION"));
 
@@ -125,8 +151,10 @@ fn run_cli(cli: Cli) -> Result<()> {
             let chosen_preset = tui::run_playlist_preset_picker(&meta)?;
 
             if let Some(preset) = chosen_preset {
-                println!("\x1b[32m>> Selected playlist preset: {}\x1b[0m", preset);
+                let title = meta.title.as_deref().unwrap_or("Playlist");
+                set_terminal_title(&format!("Playlist: {}", title));
                 let (fmt, is_audio) = downloader::build_playlist_format(&preset, &cli.codec);
+                print_download_banner(title, meta.uploader.as_deref(), &fmt, &config.download_dir, is_audio);
                 downloader::execute_playlist_download(
                     &url,
                     &fmt,
@@ -136,7 +164,6 @@ fn run_cli(cli: Cli) -> Result<()> {
                     &config,
                     use_cookies,
                 )?;
-                let title = meta.title.as_deref().unwrap_or("Playlist");
                 notify::send_notification("Playlist Download Complete", title);
             } else {
                 println!("\x1b[33m>> Playlist download cancelled.\x1b[0m");
@@ -147,11 +174,9 @@ fn run_cli(cli: Cli) -> Result<()> {
                 "quick-4k" => "2160p",
                 _ => "best",
             };
-            println!(
-                "\x1b[36m>> Starting quick playlist download ({}, preset: {}, codec: {})...\x1b[0m",
-                cli.mode, preset, cli.codec
-            );
+            set_terminal_title("Downloading Playlist...");
             let (fmt, is_audio) = downloader::build_playlist_format(preset, &cli.codec);
+            print_download_banner(&url, None, &fmt, &config.download_dir, is_audio);
             downloader::execute_playlist_download(
                 &url,
                 &fmt,
@@ -172,7 +197,9 @@ fn run_cli(cli: Cli) -> Result<()> {
             let chosen_format = tui::run_format_picker(&meta)?;
 
             if let Some(fmt_str) = chosen_format {
-                println!("\x1b[32m>> Selected format: {}\x1b[0m", fmt_str);
+                set_terminal_title(&meta.title);
+                let is_audio = fmt_str == "ba" || fmt_str == "ba/b" || fmt_str.starts_with("ba[");
+                print_download_banner(&meta.title, meta.uploader.as_deref(), &fmt_str, &config.download_dir, is_audio);
                 downloader::execute_download(
                     &url,
                     Some(&fmt_str),
@@ -187,10 +214,10 @@ fn run_cli(cli: Cli) -> Result<()> {
                 println!("\x1b[33m>> Selection cancelled.\x1b[0m");
             }
         } else {
-            println!(
-                "\x1b[36m>> Starting quick download ({}, codec: {})...\x1b[0m",
-                cli.mode, cli.codec
-            );
+            set_terminal_title("Downloading Video...");
+            let final_fmt = downloader::build_format_string(&cli.mode, &cli.codec, cli.format.as_deref());
+            let is_audio = final_fmt == "ba" || final_fmt == "ba/b" || final_fmt.starts_with("ba[");
+            print_download_banner(&url, None, &final_fmt, &config.download_dir, is_audio);
             downloader::execute_download(
                 &url,
                 cli.format.as_deref(),
