@@ -65,6 +65,51 @@ impl Format {
     }
 }
 
+pub fn build_format_string(mode: &str, codec: &str, custom_format: Option<&str>) -> String {
+    if let Some(f) = custom_format {
+        return f.to_string();
+    }
+
+    let codec_filter = match codec.to_lowercase().as_str() {
+        "av1" => "[vcodec^=av01]",
+        "vp9" => "[vcodec^=vp09]",
+        "hevc" => "[vcodec^=hvc1]",
+        "h264" => "[vcodec^=avc1]",
+        _ => "",
+    };
+
+    match mode {
+        "quick-max" => {
+            if codec_filter.is_empty() {
+                "bv*+ba/b".to_string()
+            } else {
+                format!("bv*{}+ba/bv*+ba/b", codec_filter)
+            }
+        }
+        "quick-1080p" => {
+            if codec_filter.is_empty() {
+                "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b".to_string()
+            } else {
+                format!(
+                    "bv*[height<=1080]{}+ba/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b",
+                    codec_filter
+                )
+            }
+        }
+        "quick-4k" => {
+            if codec_filter.is_empty() {
+                "bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b".to_string()
+            } else {
+                format!(
+                    "bv*[height<=2160]{}+ba/bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b",
+                    codec_filter
+                )
+            }
+        }
+        _ => "bv*+ba/b".to_string(),
+    }
+}
+
 pub fn fetch_metadata(url: &str, deps: &Dependencies, config: &Config) -> Result<VideoMeta> {
     let mut cmd = Command::new("yt-dlp");
     cmd.arg("--dump-json").arg("--no-playlist");
@@ -95,6 +140,7 @@ pub fn execute_download(
     url: &str,
     format_spec: Option<&str>,
     mode: &str,
+    codec: &str,
     deps: &Dependencies,
     config: &Config,
 ) -> Result<()> {
@@ -110,22 +156,8 @@ pub fn execute_download(
     cmd.arg("--embed-chapters");
     cmd.arg("--embed-thumbnail");
 
-    match mode {
-        "quick-max" => {
-            cmd.arg("-f").arg("bv*+ba/b");
-        }
-        "quick-1080p" => {
-            cmd.arg("-f").arg("bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b");
-        }
-        "quick-4k" => {
-            cmd.arg("-f").arg("bv*[height<=2160]+ba/b[height<=2160]/bv*+ba/b");
-        }
-        _ => {
-            if let Some(f) = format_spec {
-                cmd.arg("-f").arg(f);
-            }
-        }
-    }
+    let final_format = build_format_string(mode, codec, format_spec);
+    cmd.arg("-f").arg(&final_format);
 
     cmd.arg(url);
     cmd.stdin(Stdio::inherit());
@@ -139,4 +171,3 @@ pub fn execute_download(
 
     Ok(())
 }
-

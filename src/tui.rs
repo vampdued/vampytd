@@ -265,18 +265,36 @@ fn tui_loop(
                         // Fallback to currently highlighted item if none tagged
                         if let Some(selected) = table_state.selected() {
                             if let Some(&orig_idx) = filtered_indices.get(selected) {
-                                return Ok(Some(formats[orig_idx].format_id.clone()));
+                                let fmt = &formats[orig_idx];
+                                if fmt.is_video() && fmt.acodec.as_deref().unwrap_or("none") == "none" {
+                                    // Smart pairing: video-only stream auto-pairs with bestaudio
+                                    return Ok(Some(format!("{}+ba", fmt.format_id)));
+                                } else {
+                                    return Ok(Some(fmt.format_id.clone()));
+                                }
                             }
                         }
                     } else {
-                        // Join tagged streams (e.g. video_id+audio_id)
                         let mut sorted_tags: Vec<usize> = selected_indices.into_iter().collect();
                         sorted_tags.sort();
-                        let spec = sorted_tags
+
+                        let has_audio = sorted_tags.iter().any(|&i| {
+                            let f = &formats[i];
+                            f.is_audio_only() || f.acodec.as_deref().unwrap_or("none") != "none"
+                        });
+                        let has_video = sorted_tags.iter().any(|&i| formats[i].is_video());
+
+                        let mut spec = sorted_tags
                             .into_iter()
                             .map(|i| formats[i].format_id.as_str())
                             .collect::<Vec<_>>()
                             .join("+");
+
+                        // Smart pairing: if user tagged video but forgot audio, auto-pair with bestaudio
+                        if has_video && !has_audio {
+                            spec.push_str("+ba");
+                        }
+
                         return Ok(Some(spec));
                     }
                 }

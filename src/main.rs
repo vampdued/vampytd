@@ -104,14 +104,14 @@ fn run_cli(cli: Cli) -> Result<()> {
 
         if let Some(fmt_str) = chosen_format {
             println!("\x1b[32m>> Selected format: {}\x1b[0m", fmt_str);
-            downloader::execute_download(&url, Some(&fmt_str), &cli.mode, &deps, &config)?;
+            downloader::execute_download(&url, Some(&fmt_str), &cli.mode, &cli.codec, &deps, &config)?;
             notify::send_notification("Download Complete", &meta.title);
         } else {
             println!("\x1b[33m>> Selection cancelled.\x1b[0m");
         }
     } else {
-        println!("\x1b[36m>> Starting quick download ({})...\x1b[0m", cli.mode);
-        downloader::execute_download(&url, cli.format.as_deref(), &cli.mode, &deps, &config)?;
+        println!("\x1b[36m>> Starting quick download ({}, codec: {})...\x1b[0m", cli.mode, cli.codec);
+        downloader::execute_download(&url, cli.format.as_deref(), &cli.mode, &cli.codec, &deps, &config)?;
         notify::send_notification("Download Complete", &url);
     }
 
