@@ -3,6 +3,7 @@ pub fn send_notification(title: &str, body: &str) {
     {
         use notify_rust::Notification;
         let _ = Notification::new()
+            .app_id("VampYTD")
             .appname("VampYTD")
             .summary(title)
             .body(body)
@@ -12,6 +13,7 @@ pub fn send_notification(title: &str, body: &str) {
     {
         use notify_rust::Notification;
         let _ = Notification::new()
+            .appname("VampYTD")
             .summary(title)
             .body(body)
             .show();

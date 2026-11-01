@@ -29,9 +29,10 @@ if ($Uninstall) {
         }
     }
 
-    if (Test-Path $InstallDir) {
-        Remove-Item -Path $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "  Removed installation directory: $InstallDir" -ForegroundColor DarkGray
+    $aumidReg = "HKCU:\Software\Classes\AppUserModelId\VampYTD"
+    if (Test-Path $aumidReg) {
+        Remove-Item -Path $aumidReg -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "  Removed notification registry key: $aumidReg" -ForegroundColor DarkGray
     }
 
     Write-Host "VampYTD has been successfully uninstalled." -ForegroundColor Green
@@ -100,7 +101,16 @@ foreach ($key in $BrowserRegKeys) {
     Write-Host "  Registered in: $key" -ForegroundColor DarkGray
 }
 
-# 5. Add to User PATH if missing
+# 5. Register AppUserModelId for Windows Notifications
+$aumidReg = "HKCU:\Software\Classes\AppUserModelId\VampYTD"
+if (-not (Test-Path $aumidReg)) {
+    New-Item -Path $aumidReg -Force | Out-Null
+}
+Set-ItemProperty -Path $aumidReg -Name "DisplayName" -Value "VampYTD" -Force
+Set-ItemProperty -Path $aumidReg -Name "IconUri" -Value $ExePath -Force
+Write-Host "  Registered AppUserModelId for Windows Notifications: $aumidReg" -ForegroundColor Green
+
+# 6. Add to User PATH if missing
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($userPath -notlike "*$InstallDir*") {
     [Environment]::SetEnvironmentVariable("Path", "$userPath;$InstallDir", "User")
