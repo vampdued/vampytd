@@ -67,17 +67,180 @@ impl Format {
         }
     }
 
-    pub fn res_string(&self) -> String {
+    pub fn is_storyboard(&self) -> bool {
+        if self.format_id.starts_with("sb") || self.ext == "mhtml" {
+            return true;
+        }
+        let v = self.vcodec.as_deref().unwrap_or("none");
+        let a = self.acodec.as_deref().unwrap_or("none");
+        if v == "none" && a == "none" {
+            return true;
+        }
+        if let Some(ref note) = self.format_note {
+            let lower = note.to_lowercase();
+            if lower.contains("storyboard") {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn is_muxed(&self) -> bool {
+        self.is_video() && self.acodec.as_deref().unwrap_or("none") != "none"
+    }
+
+    pub fn stream_type_badge(&self) -> &'static str {
+        if self.is_muxed() {
+            "MUX"
+        } else if self.is_video() {
+            "VID"
+        } else {
+            "AUD"
+        }
+    }
+
+    pub fn vcodec_clean(&self) -> &'static str {
+        let v = self.vcodec.as_deref().unwrap_or("none").to_lowercase();
+        if v == "none" {
+            "-"
+        } else if v.starts_with("av01") {
+            "AV1"
+        } else if v.starts_with("vp9") || v.starts_with("vp09") {
+            "VP9"
+        } else if v.starts_with("hvc1") || v.starts_with("hev1") || v.starts_with("hevc") || v.starts_with("h265") {
+            "HEVC"
+        } else if v.starts_with("avc1") || v.starts_with("h264") {
+            "H.264"
+        } else {
+            "Other"
+        }
+    }
+
+    pub fn acodec_clean(&self) -> &'static str {
+        let a = self.acodec.as_deref().unwrap_or("none").to_lowercase();
+        if a == "none" {
+            "-"
+        } else if a.contains("opus") {
+            "Opus"
+        } else if a.contains("mp4a") || a.contains("aac") {
+            "AAC"
+        } else if a.contains("mp3") {
+            "MP3"
+        } else if a.contains("vorbis") {
+            "Vorbis"
+        } else {
+            "Other"
+        }
+    }
+
+    pub fn fps_clean(&self) -> String {
+        if let Some(f) = self.fps {
+            let rounded = f.round();
+            if rounded > 0.0 {
+                return format!("{}", rounded as u32);
+            }
+        }
+        "-".to_string()
+    }
+
+    pub fn res_clean(&self) -> String {
         if let Some(h) = self.height {
-            format!("{}p", h)
+            match h {
+                4320.. => format!("8K {}p", h),
+                2160.. => format!("4K {}p", h),
+                1440.. => format!("2K {}p", h),
+                1080 => "1080p FHD".to_string(),
+                720 => "720p HD".to_string(),
+                _ => format!("{}p", h),
+            }
+        } else if self.is_audio_only() {
+            "Audio Only".to_string()
         } else if let Some(ref r) = self.resolution {
             r.clone()
-        } else if self.is_audio_only() {
-            "audio".to_string()
         } else {
             "?".to_string()
         }
     }
+
+    pub fn vcodec_rank(&self) -> u8 {
+        let v = self.vcodec.as_deref().unwrap_or("none").to_lowercase();
+        if v.starts_with("av01") {
+            1
+        } else if v.starts_with("vp9") || v.starts_with("vp09") {
+            2
+        } else if v.starts_with("hvc1") || v.starts_with("hev1") || v.starts_with("hevc") || v.starts_with("h265") {
+            3
+        } else if v.starts_with("avc1") || v.starts_with("h264") {
+            4
+        } else {
+            99
+        }
+    }
+
+    pub fn acodec_rank(&self) -> u8 {
+        let a = self.acodec.as_deref().unwrap_or("none").to_lowercase();
+        if a.contains("opus") {
+            1
+        } else if a.contains("aac") || a.contains("mp4a") {
+            2
+        } else if a.contains("mp3") {
+            3
+        } else {
+            99
+        }
+    }
+
+}
+
+pub fn sort_and_filter_formats(formats: &[Format]) -> Vec<Format> {
+    let mut valid: Vec<Format> = formats
+        .iter()
+        .filter(|f| !f.is_storyboard())
+        .cloned()
+        .collect();
+
+    valid.sort_by(|a, b| {
+        // Audio-only at the bottom
+        if a.is_audio_only() != b.is_audio_only() {
+            return a.is_audio_only().cmp(&b.is_audio_only());
+        }
+
+        if a.is_audio_only() && b.is_audio_only() {
+            // Audio quality ranking (Opus > AAC > MP3)
+            if a.acodec_rank() != b.acodec_rank() {
+                return a.acodec_rank().cmp(&b.acodec_rank());
+            }
+            let a_size = a.filesize.or(a.filesize_approx).unwrap_or(0);
+            let b_size = b.filesize.or(b.filesize_approx).unwrap_or(0);
+            return b_size.cmp(&a_size);
+        }
+
+        // Video streams: Height descending (8K -> 4K -> 1440p -> 1080p -> ...)
+        let a_h = a.height.unwrap_or(0);
+        let b_h = b.height.unwrap_or(0);
+        if a_h != b_h {
+            return b_h.cmp(&a_h);
+        }
+
+        // FPS descending (60fps > 30fps)
+        let a_fps = a.fps.map(|f| f.round() as u32).unwrap_or(0);
+        let b_fps = b.fps.map(|f| f.round() as u32).unwrap_or(0);
+        if a_fps != b_fps {
+            return b_fps.cmp(&a_fps);
+        }
+
+        // Codec rank (AV1 > VP9 > HEVC > H264)
+        if a.vcodec_rank() != b.vcodec_rank() {
+            return a.vcodec_rank().cmp(&b.vcodec_rank());
+        }
+
+        // Filesize / bitrate descending
+        let a_size = a.filesize.or(a.filesize_approx).unwrap_or(0);
+        let b_size = b.filesize.or(b.filesize_approx).unwrap_or(0);
+        b_size.cmp(&a_size)
+    });
+
+    valid
 }
 
 pub fn is_playlist_url(url: &str) -> bool {

@@ -19,16 +19,29 @@ use ratatui::{
 use std::collections::HashSet;
 use std::io::{self, Stdout};
 
-use crate::downloader::{Format, PlaylistMeta, VideoMeta};
+use crate::downloader::{self, Format, PlaylistMeta, VideoMeta};
 
 const YT_RED: Color = Color::Rgb(255, 0, 0);
 const YT_SURFACE: Color = Color::Rgb(24, 24, 24);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum QuickFilter {
+    All,
+    VideoOnly,
+    AudioOnly,
+    HDPlus,
+}
+
 pub fn run_format_picker(meta: &VideoMeta) -> Result<Option<String>> {
-    let formats = match &meta.formats {
+    let raw_formats = match &meta.formats {
         Some(f) if !f.is_empty() => f.clone(),
         _ => anyhow::bail!("No formats available for this video"),
     };
+
+    let formats = downloader::sort_and_filter_formats(&raw_formats);
+    if formats.is_empty() {
+        anyhow::bail!("No usable video or audio streams found (only storyboards).");
+    }
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -56,12 +69,26 @@ fn tui_loop(
 
     let mut query = String::new();
     let mut is_searching = false;
+    let mut quick_filter = QuickFilter::All;
     let mut matcher = Matcher::new(MatcherConfig::DEFAULT);
 
     loop {
-        // Filter formats using nucleo fuzzy matcher
+        // 1. Apply quick filter
+        let base_indices: Vec<usize> = formats
+            .iter()
+            .enumerate()
+            .filter(|(_, fmt)| match quick_filter {
+                QuickFilter::All => true,
+                QuickFilter::VideoOnly => fmt.is_video(),
+                QuickFilter::AudioOnly => fmt.is_audio_only(),
+                QuickFilter::HDPlus => fmt.height.unwrap_or(0) >= 1080,
+            })
+            .map(|(idx, _)| idx)
+            .collect();
+
+        // 2. Filter using nucleo fuzzy matcher if query present
         let filtered_indices: Vec<usize> = if query.trim().is_empty() {
-            (0..formats.len()).collect()
+            base_indices
         } else {
             let mut matches: Vec<(usize, u32)> = Vec::new();
             let pattern = Pattern::new(
@@ -71,13 +98,15 @@ fn tui_loop(
                 nucleo_matcher::pattern::AtomKind::Fuzzy,
             );
 
-            for (idx, fmt) in formats.iter().enumerate() {
+            for &idx in &base_indices {
+                let fmt = &formats[idx];
                 let hay = format!(
-                    "{} {} {} {} {}",
+                    "{} {} {} {} {} {}",
                     fmt.format_id,
-                    fmt.res_string(),
-                    fmt.vcodec.as_deref().unwrap_or(""),
-                    fmt.acodec.as_deref().unwrap_or(""),
+                    fmt.res_clean(),
+                    fmt.vcodec_clean(),
+                    fmt.acodec_clean(),
+                    fmt.fps_clean(),
                     fmt.ext
                 );
                 let mut buf = Vec::new();
@@ -104,9 +133,9 @@ fn tui_loop(
                 .direction(Direction::Vertical)
                 .constraints([
                     Constraint::Length(3), // Header title
-                    Constraint::Length(3), // Search bar
-                    Constraint::Min(5),    // Formats Table
-                    Constraint::Length(2), // Status / Help
+                    Constraint::Length(3), // Search bar & quick filter pills
+                    Constraint::Min(6),    // Formats Table
+                    Constraint::Length(3), // Status / Help
                 ])
                 .split(f.area());
 
@@ -124,27 +153,48 @@ fn tui_loop(
             );
             f.render_widget(header_p, chunks[0]);
 
-            // 2. Search Box
-            let search_style = if is_searching {
-                Style::default().fg(YT_RED)
+            // 2. Search Box with Quick Filter Badges
+            let search_border = if is_searching {
+                Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::DarkGray)
             };
-            let search_p = Paragraph::new(format!(" > {}", query)).block(
+
+            let filter_badge = match quick_filter {
+                QuickFilter::All => Span::styled(" [All Streams] ", Style::default().fg(Color::White)),
+                QuickFilter::VideoOnly => Span::styled(" [Videos Only (v)] ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                QuickFilter::AudioOnly => Span::styled(" [Audio Only (a)] ", Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD)),
+                QuickFilter::HDPlus => Span::styled(" [HD 1080p+ (h)] ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            };
+
+            let search_line = Line::from(vec![
+                filter_badge,
+                Span::styled(" Search: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(if query.is_empty() && !is_searching { "Press '/' to type filter... (or 'v' 'a' 'h' 'c')" } else { &query }, 
+                    if is_searching { Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD) } else { Style::default().fg(Color::DarkGray) }),
+            ]);
+
+            let search_p = Paragraph::new(search_line).block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(" Search / Fuzzy Filter (Press / to type) ")
-                    .border_style(search_style),
+                    .title(" Quick Filter & Search ")
+                    .border_style(search_border),
             );
             f.render_widget(search_p, chunks[1]);
 
             // 3. Table Rows
-            let header_cells = ["SEL", "ID", "RES", "VCODEC", "ACODEC", "FPS", "SIZE", "EXT"]
-                .iter()
-                .map(|h| cell_style(*h));
-            let header_row = Row::new(header_cells)
-                .style(Style::default().fg(YT_RED).add_modifier(Modifier::BOLD))
-                .bottom_margin(1);
+            let header_row = Row::new(vec![
+                Span::styled(" SEL", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled("TYPE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("ID", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("RESOLUTION", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("VCODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("ACODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("FPS", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("SIZE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("EXT", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            ])
+            .bottom_margin(1);
 
             let rows: Vec<Row> = filtered_indices
                 .iter()
@@ -154,15 +204,56 @@ fn tui_loop(
                     let tag_cell = if is_tagged { "[x]" } else { "[ ]" };
                     let tag_color = if is_tagged { YT_RED } else { Color::DarkGray };
 
+                    let type_style = match fmt.stream_type_badge() {
+                        "MUX" => Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                        "VID" => Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                        _ => Style::default().fg(Color::Magenta).add_modifier(Modifier::BOLD),
+                    };
+
+                    let res_style = if fmt.is_audio_only() {
+                        Style::default().fg(Color::Magenta)
+                    } else if fmt.height.unwrap_or(0) >= 2160 {
+                        Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD)
+                    } else if fmt.height.unwrap_or(0) >= 1080 {
+                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+
+                    let vcodec_clean = fmt.vcodec_clean();
+                    let vcodec_style = match vcodec_clean {
+                        "AV1" => Style::default().fg(Color::LightGreen),
+                        "VP9" => Style::default().fg(Color::LightCyan),
+                        "HEVC" => Style::default().fg(Color::Yellow),
+                        "H.264" => Style::default().fg(Color::White),
+                        _ => Style::default().fg(Color::DarkGray),
+                    };
+
+                    let acodec_clean = fmt.acodec_clean();
+                    let acodec_style = match acodec_clean {
+                        "Opus" => Style::default().fg(Color::LightGreen),
+                        "AAC" => Style::default().fg(Color::LightCyan),
+                        "MP3" => Style::default().fg(Color::LightYellow),
+                        _ => Style::default().fg(Color::DarkGray),
+                    };
+
+                    let fps_str = fmt.fps_clean();
+                    let fps_style = if fps_str == "60" {
+                        Style::default().fg(Color::LightGreen)
+                    } else {
+                        Style::default().fg(Color::DarkGray)
+                    };
+
                     let cells = vec![
-                        Span::styled(tag_cell, Style::default().fg(tag_color).add_modifier(Modifier::BOLD)),
-                        Span::raw(&fmt.format_id),
-                        Span::styled(fmt.res_string(), Style::default().fg(Color::Cyan)),
-                        Span::raw(fmt.vcodec.as_deref().unwrap_or("-")),
-                        Span::raw(fmt.acodec.as_deref().unwrap_or("-")),
-                        Span::raw(fmt.fps.map(|v| v.to_string()).unwrap_or_else(|| "-".into())),
-                        Span::styled(fmt.size_string(), Style::default().fg(Color::Green)),
-                        Span::raw(&fmt.ext),
+                        Span::styled(format!(" {}", tag_cell), Style::default().fg(tag_color).add_modifier(Modifier::BOLD)),
+                        Span::styled(fmt.stream_type_badge(), type_style),
+                        Span::styled(&fmt.format_id, Style::default().fg(Color::White)),
+                        Span::styled(fmt.res_clean(), res_style),
+                        Span::styled(vcodec_clean, vcodec_style),
+                        Span::styled(acodec_clean, acodec_style),
+                        Span::styled(fps_str, fps_style),
+                        Span::styled(fmt.size_string(), Style::default().fg(Color::LightGreen)),
+                        Span::styled(&fmt.ext, Style::default().fg(Color::DarkGray)),
                     ];
                     Row::new(cells)
                 })
@@ -171,11 +262,12 @@ fn tui_loop(
             let table = Table::new(
                 rows,
                 [
-                    Constraint::Length(5),  // Tag
+                    Constraint::Length(5),  // SEL
+                    Constraint::Length(6),  // TYPE
                     Constraint::Length(8),  // ID
-                    Constraint::Length(10), // RES
-                    Constraint::Length(12), // VCODEC
-                    Constraint::Length(12), // ACODEC
+                    Constraint::Length(14), // RESOLUTION
+                    Constraint::Length(9),  // VCODEC
+                    Constraint::Length(8),  // ACODEC
                     Constraint::Length(6),  // FPS
                     Constraint::Length(10), // SIZE
                     Constraint::Length(6),  // EXT
@@ -185,8 +277,8 @@ fn tui_loop(
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(" Available Streams (Space: Toggle Multi-Select | Enter: Download) ")
-                    .border_style(Style::default().fg(Color::Gray)),
+                    .title(" Available Streams (Ranked by Quality) ")
+                    .border_style(Style::default().fg(Color::DarkGray)),
             )
             .row_highlight_style(
                 Style::default()
@@ -200,11 +292,27 @@ fn tui_loop(
 
             // 4. Footer Bar
             let tagged_count = selected_indices.len();
-            let summary = format!(
-                " Selected Streams: {} | [↑/↓/j/k]: Navigate | [Space]: Toggle Stream | [Enter]: Confirm | [Esc]: Back/Exit",
-                tagged_count
-            );
-            let footer_p = Paragraph::new(summary).style(Style::default().fg(Color::DarkGray));
+            let summary = Line::from(vec![
+                Span::styled(format!(" Tagged: {} ", tagged_count), Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled("| [Space]", Style::default().fg(Color::Yellow)),
+                Span::raw(" Tag | "),
+                Span::styled("[Enter]", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::raw(" Download | "),
+                Span::styled("[v]", Style::default().fg(Color::Cyan)),
+                Span::raw(" Video | "),
+                Span::styled("[a]", Style::default().fg(Color::Magenta)),
+                Span::raw(" Audio | "),
+                Span::styled("[h]", Style::default().fg(Color::Green)),
+                Span::raw(" HD+ | "),
+                Span::styled("[c]", Style::default().fg(Color::LightRed)),
+                Span::raw(" Reset | "),
+                Span::styled("[/]", Style::default().fg(Color::Yellow)),
+                Span::raw(" Fuzzy | "),
+                Span::styled("[q]", Style::default().fg(Color::DarkGray)),
+                Span::raw(" Exit"),
+            ]);
+            let footer_p = Paragraph::new(summary)
+                .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
             f.render_widget(footer_p, chunks[3]);
         })?;
 
@@ -216,7 +324,11 @@ fn tui_loop(
 
             if is_searching {
                 match key.code {
-                    KeyCode::Esc | KeyCode::Enter => {
+                    KeyCode::Esc => {
+                        is_searching = false;
+                        query.clear();
+                    }
+                    KeyCode::Enter => {
                         is_searching = false;
                     }
                     KeyCode::Backspace => {
@@ -234,6 +346,19 @@ fn tui_loop(
                 KeyCode::Char('q') | KeyCode::Esc => return Ok(None),
                 KeyCode::Char('/') => {
                     is_searching = true;
+                }
+                KeyCode::Char('v') => {
+                    quick_filter = if quick_filter == QuickFilter::VideoOnly { QuickFilter::All } else { QuickFilter::VideoOnly };
+                }
+                KeyCode::Char('a') => {
+                    quick_filter = if quick_filter == QuickFilter::AudioOnly { QuickFilter::All } else { QuickFilter::AudioOnly };
+                }
+                KeyCode::Char('h') => {
+                    quick_filter = if quick_filter == QuickFilter::HDPlus { QuickFilter::All } else { QuickFilter::HDPlus };
+                }
+                KeyCode::Char('c') => {
+                    quick_filter = QuickFilter::All;
+                    query.clear();
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
                     if let Some(selected) = table_state.selected() {
@@ -302,10 +427,6 @@ fn tui_loop(
             }
         }
     }
-}
-
-fn cell_style<'a>(s: &'a str) -> Span<'a> {
-    Span::raw(s)
 }
 
 pub fn run_playlist_preset_picker(meta: &PlaylistMeta) -> Result<Option<String>> {
