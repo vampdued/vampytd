@@ -42,9 +42,13 @@ Write-Host "==> Installing VampYTD (Rust Unified Binary)..." -ForegroundColor Cy
 
 # 1. Build release binary if not skipped
 if (-not $SkipBuild) {
-    $cargoCmd = (Get-Command cargo -ErrorAction SilentlyContinue)?.Source
-    if (-not $cargoCmd -and (Test-Path "$env:USERPROFILE\.cargo\bin\cargo.exe")) {
+    $cargoFound = Get-Command cargo -ErrorAction SilentlyContinue
+    if ($cargoFound) {
+        $cargoCmd = $cargoFound.Source
+    } elseif (Test-Path "$env:USERPROFILE\.cargo\bin\cargo.exe") {
         $cargoCmd = "$env:USERPROFILE\.cargo\bin\cargo.exe"
+    } else {
+        $cargoCmd = $null
     }
 
     if (-not $cargoCmd) {

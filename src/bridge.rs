@@ -65,6 +65,12 @@ pub fn run_bridge() -> Result<()> {
         return Ok(());
     }
 
+    if req.action.as_deref() == Some("update") {
+        launch_terminal_updater()?;
+        send_response(&mut stdout, &serde_json::json!({ "ok": true }))?;
+        return Ok(());
+    }
+
     // Download action
     if req.url.is_some() {
         launch_terminal_downloader(req)?;
@@ -126,26 +132,43 @@ fn launch_terminal_downloader(req: BridgeRequest) -> Result<()> {
         args.push("--codec".to_string());
         args.push(codec);
     }
-    if req.cookies.unwrap_or(false) {
-        args.push("--cookies".to_string());
+    if let Some(cookies) = req.cookies {
+        if cookies {
+            args.push("--cookies".to_string());
+        } else {
+            args.push("--no-cookies".to_string());
+        }
     }
     if req.playlist.unwrap_or(false) {
         args.push("--playlist".to_string());
     }
     if let Some(items) = req.items {
-        args.push("--items".to_string());
-        args.push(items);
+        if !items.trim().is_empty() {
+            args.push("--items".to_string());
+            args.push(items.trim().to_string());
+        }
     }
 
+    spawn_terminal_process(&current_exe, &args, "VampYTD Downloader")
+}
+
+fn launch_terminal_updater() -> Result<()> {
+    let current_exe = std::env::current_exe()?;
+    let args = vec!["update".to_string()];
+    spawn_terminal_process(&current_exe, &args, "VampYTD Updater")
+}
+
+fn spawn_terminal_process(exe: &std::path::Path, args: &[String], title: &str) -> Result<()> {
     #[cfg(target_os = "windows")]
     {
-        // Try Windows Terminal (wt.exe) first, fallback to cmd.exe
+        // Try Windows Terminal (wt.exe) first
         let wt_found = which::which("wt").is_ok();
         if wt_found {
             let mut cmd = Command::new("wt.exe");
-            cmd.arg("--title").arg("VampYTD Downloader");
-            cmd.arg(&current_exe);
-            for a in &args {
+            cmd.arg("new-tab");
+            cmd.arg("--title").arg(title);
+            cmd.arg(exe);
+            for a in args {
                 cmd.arg(a);
             }
             if cmd.spawn().is_ok() {
@@ -155,8 +178,8 @@ fn launch_terminal_downloader(req: BridgeRequest) -> Result<()> {
 
         // Fallback to start cmd.exe
         let mut cmd = Command::new("cmd.exe");
-        cmd.args(["/c", "start", "VampYTD", current_exe.to_str().unwrap()]);
-        for a in &args {
+        cmd.args(["/c", "start", title, exe.to_str().unwrap()]);
+        for a in args {
             cmd.arg(a);
         }
         cmd.spawn()?;
@@ -164,7 +187,7 @@ fn launch_terminal_downloader(req: BridgeRequest) -> Result<()> {
 
     #[cfg(not(target_os = "windows"))]
     {
-        Command::new(&current_exe).args(&args).spawn()?;
+        Command::new(exe).args(args).spawn()?;
     }
 
     Ok(())

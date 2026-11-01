@@ -19,7 +19,7 @@ use ratatui::{
 use std::collections::HashSet;
 use std::io::{self, Stdout};
 
-use crate::downloader::{Format, VideoMeta};
+use crate::downloader::{Format, PlaylistMeta, VideoMeta};
 
 const YT_RED: Color = Color::Rgb(255, 0, 0);
 const YT_SURFACE: Color = Color::Rgb(24, 24, 24);
@@ -306,4 +306,162 @@ fn tui_loop(
 
 fn cell_style<'a>(s: &'a str) -> Span<'a> {
     Span::raw(s)
+}
+
+pub fn run_playlist_preset_picker(meta: &PlaylistMeta) -> Result<Option<String>> {
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    let res = playlist_tui_loop(&mut terminal, meta);
+
+    disable_raw_mode()?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    terminal.show_cursor()?;
+
+    res
+}
+
+fn playlist_tui_loop(
+    terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+    meta: &PlaylistMeta,
+) -> Result<Option<String>> {
+    let presets = [
+        ("1", "Best Available", "Highest quality video + audio", "best"),
+        ("2", "2160p (4K UHD)", "Ultra High Definition", "2160p"),
+        ("3", "1440p (2K QHD)", "Quad High Definition", "1440p"),
+        ("4", "1080p (Full HD)", "Standard High Definition", "1080p"),
+        ("5", "720p (HD)", "Efficient High Definition", "720p"),
+        ("6", "Audio Only", "Best Audio Stream (Opus/M4A)", "audio"),
+    ];
+
+    let mut table_state = TableState::default();
+    table_state.select(Some(0));
+
+    loop {
+        terminal.draw(|f| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(3), // Header
+                    Constraint::Min(8),    // Table
+                    Constraint::Length(3), // Footer
+                ])
+                .split(f.area());
+
+            let title = meta.title.as_deref().unwrap_or("YouTube Playlist");
+            let count = meta.playlist_count.map(|c| format!("{} videos", c)).unwrap_or_else(|| "Playlist".to_string());
+            let header_text = format!(" VampYTD Playlist Preset Picker | {} ({})", title, count);
+            let header = Paragraph::new(Line::from(vec![
+                Span::styled(">>", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled(header_text, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            ]))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(YT_RED))
+                    .style(Style::default().bg(YT_SURFACE)),
+            );
+            f.render_widget(header, chunks[0]);
+
+            let rows: Vec<Row> = presets
+                .iter()
+                .map(|(num, label, desc, _)| {
+                    Row::new(vec![
+                        Span::styled(format!(" [{}]", num), Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                        Span::styled(*label, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+                        Span::styled(*desc, Style::default().fg(Color::DarkGray)),
+                    ])
+                    .height(1)
+                })
+                .collect();
+
+            let header_row = Row::new(vec![
+                Span::styled(" Key", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("Preset", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("Description", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+            ])
+            .bottom_margin(1);
+
+            let table = Table::new(
+                rows,
+                [
+                    Constraint::Length(6),
+                    Constraint::Length(22),
+                    Constraint::Min(30),
+                ],
+            )
+            .header(header_row)
+            .block(
+                Block::default()
+                    .title(" Quality Presets ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::DarkGray)),
+            )
+            .row_highlight_style(
+                Style::default()
+                    .bg(YT_RED)
+                    .fg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .highlight_symbol(">> ");
+
+            f.render_stateful_widget(table, chunks[1], &mut table_state);
+
+            let footer = Paragraph::new(Line::from(vec![
+                Span::styled(" [1-6]", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::raw(" Quick Select | "),
+                Span::styled(" [↑/↓/j/k]", Style::default().fg(Color::Cyan)),
+                Span::raw(" Navigate | "),
+                Span::styled(" [Enter]", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+                Span::raw(" Confirm | "),
+                Span::styled(" [Esc/q]", Style::default().fg(Color::DarkGray)),
+                Span::raw(" Cancel"),
+            ]))
+            .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::DarkGray)));
+            f.render_widget(footer, chunks[2]);
+        })?;
+
+        if event::poll(std::time::Duration::from_millis(100))? {
+            if let Event::Key(key) = event::read()? {
+                if key.kind != KeyEventKind::Press {
+                    continue;
+                }
+
+                match key.code {
+                    KeyCode::Esc | KeyCode::Char('q') => return Ok(None),
+                    KeyCode::Char('1') => return Ok(Some("best".to_string())),
+                    KeyCode::Char('2') => return Ok(Some("2160p".to_string())),
+                    KeyCode::Char('3') => return Ok(Some("1440p".to_string())),
+                    KeyCode::Char('4') => return Ok(Some("1080p".to_string())),
+                    KeyCode::Char('5') => return Ok(Some("720p".to_string())),
+                    KeyCode::Char('6') => return Ok(Some("audio".to_string())),
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        if let Some(selected) = table_state.selected() {
+                            if selected > 0 {
+                                table_state.select(Some(selected - 1));
+                            }
+                        }
+                    }
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        if let Some(selected) = table_state.selected() {
+                            if selected < presets.len() - 1 {
+                                table_state.select(Some(selected + 1));
+                            }
+                        }
+                    }
+                    KeyCode::Enter => {
+                        if let Some(selected) = table_state.selected() {
+                            if let Some((_, _, _, id)) = presets.get(selected) {
+                                return Ok(Some(id.to_string()));
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
 }
