@@ -1,0 +1,29 @@
+[package]
+name = "vampytd"
+version = "2.0.0"
+edition = "2021"
+authors = ["VampDued"]
+description = "High-performance unified YouTube downloader and Chrome Native Messaging Bridge with embedded Ratatui & Nucleo fuzzy TUI"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "cargo"] }
+ratatui = "0.29"
+crossterm = { version = "0.28", features = ["event-stream"] }
+nucleo-matcher = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+which = "7.0"
+notify-rust = "4.11"
+anyhow = "1.0"
+regex = "1.11"
+chrono = "0.4"
+directories = "6.0"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
