@@ -476,16 +476,7 @@ pub fn execute_download(
     cmd.arg("-f").arg(&final_format);
 
     cmd.arg(url);
-    cmd.stdin(Stdio::inherit());
-    cmd.stdout(Stdio::inherit());
-    cmd.stderr(Stdio::inherit());
-
-    let status = cmd.status().context("Failed to run yt-dlp downloader process")?;
-    if !status.success() {
-        anyhow::bail!("yt-dlp download failed with status {}", status);
-    }
-
-    Ok(())
+    crate::colorizer::execute_with_colorizer(cmd)
 }
 
 pub fn execute_playlist_download(
@@ -539,16 +530,7 @@ pub fn execute_playlist_download(
     }
 
     cmd.arg(url);
-    cmd.stdin(Stdio::inherit());
-    cmd.stdout(Stdio::inherit());
-    cmd.stderr(Stdio::inherit());
-
-    let status = cmd.status().context("Failed to run yt-dlp playlist downloader process")?;
-    if !status.success() {
-        anyhow::bail!("yt-dlp playlist download failed with status {}", status);
-    }
-
-    Ok(())
+    crate::colorizer::execute_with_colorizer(cmd)
 }
 
 pub fn update_ytdlp() -> Result<()> {
