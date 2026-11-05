@@ -619,4 +619,25 @@ mod tests {
         fmt.tbr = None;
         assert_eq!(fmt.bitrate_clean(), "-");
     }
+
+    #[test]
+    fn test_serde_format_json_with_bitrates() {
+        let json_data = r#"{
+            "format_id": "137",
+            "ext": "mp4",
+            "resolution": "1920x1080",
+            "width": 1920,
+            "height": 1080,
+            "fps": 60,
+            "vcodec": "avc1.640028",
+            "acodec": "none",
+            "vbr": 4200.5,
+            "abr": null,
+            "tbr": 4200.5
+        }"#;
+        let fmt: Format = serde_json::from_str(json_data).expect("Failed to deserialize Format JSON");
+        assert_eq!(fmt.vbr, Some(4200.5));
+        assert_eq!(fmt.abr, None);
+        assert_eq!(fmt.bitrate_clean(), "4201k");
+    }
 }
