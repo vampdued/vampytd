@@ -42,6 +42,8 @@ pub struct Format {
     pub filesize: Option<u64>,
     pub filesize_approx: Option<u64>,
     pub tbr: Option<f64>,
+    pub vbr: Option<f64>,
+    pub abr: Option<f64>,
     pub format_note: Option<String>,
 }
 
@@ -64,6 +66,25 @@ impl Format {
             format!("{:.1} GB", mb / 1024.0)
         } else {
             format!("{:.1} MB", mb)
+        }
+    }
+
+    pub fn bitrate_clean(&self) -> String {
+        let rate_kbps = if self.is_audio_only() {
+            self.abr.or(self.tbr)
+        } else {
+            self.vbr.or(self.tbr)
+        };
+
+        if let Some(kbps) = rate_kbps {
+            let rounded = kbps.round() as u64;
+            if rounded > 0 {
+                format!("{}k", rounded)
+            } else {
+                "-".to_string()
+            }
+        } else {
+            "-".to_string()
         }
     }
 
@@ -546,4 +567,56 @@ pub fn update_ytdlp() -> Result<()> {
     }
     println!("\x1b[32m>> yt-dlp update completed successfully.\x1b[0m");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bitrate_clean_numeric() {
+        let mut fmt = Format {
+            format_id: "137".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("1920x1080".to_string()),
+            width: Some(1920),
+            height: Some(1080),
+            fps: Some(60.0),
+            vcodec: Some("avc1.640028".to_string()),
+            acodec: None,
+            filesize: Some(100_000_000),
+            filesize_approx: None,
+            tbr: Some(2540.0),
+            vbr: Some(2539.6),
+            abr: None,
+            format_note: None,
+        };
+
+        // Video stream prefers vbr -> "2540k"
+        assert_eq!(fmt.bitrate_clean(), "2540k");
+
+        // Audio stream prefers abr -> "128k"
+        let audio_fmt = Format {
+            format_id: "251".to_string(),
+            ext: "webm".to_string(),
+            resolution: None,
+            width: None,
+            height: None,
+            fps: None,
+            vcodec: None,
+            acodec: Some("opus".to_string()),
+            filesize: Some(5_000_000),
+            filesize_approx: None,
+            tbr: Some(135.0),
+            vbr: None,
+            abr: Some(128.0),
+            format_note: None,
+        };
+        assert_eq!(audio_fmt.bitrate_clean(), "128k");
+
+        // Missing bitrate defaults to "-"
+        fmt.vbr = None;
+        fmt.tbr = None;
+        assert_eq!(fmt.bitrate_clean(), "-");
+    }
 }

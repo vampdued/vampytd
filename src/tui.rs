@@ -101,12 +101,13 @@ fn tui_loop(
             for &idx in &base_indices {
                 let fmt = &formats[idx];
                 let hay = format!(
-                    "{} {} {} {} {} {}",
+                    "{} {} {} {} {} {} {}",
                     fmt.format_id,
                     fmt.res_clean(),
                     fmt.vcodec_clean(),
                     fmt.acodec_clean(),
                     fmt.fps_clean(),
+                    fmt.bitrate_clean(),
                     fmt.ext
                 );
                 let mut buf = Vec::new();
@@ -191,6 +192,7 @@ fn tui_loop(
                 Span::styled("VCODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                 Span::styled("ACODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                 Span::styled("FPS", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+                Span::styled("BITRATE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                 Span::styled("SIZE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                 Span::styled("EXT", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
             ])
@@ -244,6 +246,15 @@ fn tui_loop(
                         Style::default().fg(Color::DarkGray)
                     };
 
+                    let bitrate_str = fmt.bitrate_clean();
+                    let bitrate_style = if fmt.is_audio_only() {
+                        Style::default().fg(Color::LightYellow)
+                    } else if bitrate_str != "-" {
+                        Style::default().fg(Color::LightCyan)
+                    } else {
+                        Style::default().fg(Color::DarkGray)
+                    };
+
                     let cells = vec![
                         Span::styled(format!(" {}", tag_cell), Style::default().fg(tag_color).add_modifier(Modifier::BOLD)),
                         Span::styled(fmt.stream_type_badge(), type_style),
@@ -252,6 +263,7 @@ fn tui_loop(
                         Span::styled(vcodec_clean, vcodec_style),
                         Span::styled(acodec_clean, acodec_style),
                         Span::styled(fps_str, fps_style),
+                        Span::styled(bitrate_str, bitrate_style),
                         Span::styled(fmt.size_string(), Style::default().fg(Color::LightGreen)),
                         Span::styled(&fmt.ext, Style::default().fg(Color::DarkGray)),
                     ];
@@ -269,6 +281,7 @@ fn tui_loop(
                     Constraint::Length(9),  // VCODEC
                     Constraint::Length(8),  // ACODEC
                     Constraint::Length(6),  // FPS
+                    Constraint::Length(9),  // BITRATE
                     Constraint::Length(10), // SIZE
                     Constraint::Length(6),  // EXT
                 ],
