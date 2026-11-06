@@ -39,6 +39,10 @@ struct Cli {
     #[arg(long)]
     no_cookies: bool,
 
+    /// Disable aria2 multi-connection download acceleration
+    #[arg(long)]
+    no_aria2: bool,
+
     /// Download full playlist if URL contains a list
     #[arg(long)]
     playlist: bool,
@@ -91,6 +95,7 @@ fn print_download_banner(
     format_str: &str,
     dest_dir: &std::path::Path,
     is_audio: bool,
+    accelerator: &str,
 ) {
     let uploader_str = uploader.unwrap_or("YouTube");
     let container = if is_audio { "Audio (Native/Opus/M4A)" } else { "MKV (Matroska Universal)" };
@@ -101,6 +106,7 @@ fn print_download_banner(
     println!("\x1b[1;37m>> Stream:      \x1b[0m\x1b[32;1m{}\x1b[0m", format_str);
     println!("\x1b[1;37m>> Container:   \x1b[0m\x1b[35;1m{}\x1b[0m", container);
     println!("\x1b[1;37m>> Destination: \x1b[0m\x1b[34m{}\x1b[0m", dest_dir.display());
+    println!("\x1b[1;37m>> Accelerator: \x1b[0m\x1b[32;1m{}\x1b[0m", accelerator);
     println!("\x1b[31;1m================================================================================\x1b[0m");
     println!();
 }
@@ -115,6 +121,17 @@ fn run_cli(cli: Cli) -> Result<()> {
     }
     if !deps.ffmpeg {
         println!("\x1b[33m>> Warning: ffmpeg not found. Stream merging may fail.\x1b[0m");
+    }
+
+    let use_aria2 = deps.aria2 && !cli.no_aria2;
+    let accel_label = if use_aria2 {
+        "⚡ aria2c (16 parallel connections)"
+    } else {
+        "Native (yt-dlp)"
+    };
+
+    if !deps.aria2 && !cli.no_aria2 {
+        println!("\x1b[38;2;147;153;178m>> Tip: Install aria2 ('winget install aria2.aria2') for 16x parallel connection acceleration\x1b[0m");
     }
 
     let url = match cli.url {
@@ -155,7 +172,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                 let title = meta.title.as_deref().unwrap_or("Playlist");
                 set_terminal_title(&format!("Playlist: {}", title));
                 let (fmt, is_audio) = downloader::build_playlist_format(&preset, &cli.codec);
-                print_download_banner(title, meta.uploader.as_deref(), &fmt, &config.download_dir, is_audio);
+                print_download_banner(title, meta.uploader.as_deref(), &fmt, &config.download_dir, is_audio, accel_label);
                 downloader::execute_playlist_download(
                     &url,
                     &fmt,
@@ -164,6 +181,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                     &deps,
                     &config,
                     use_cookies,
+                    use_aria2,
                 )?;
                 notify::send_notification("Playlist Download Complete", title);
             } else {
@@ -177,7 +195,7 @@ fn run_cli(cli: Cli) -> Result<()> {
             };
             set_terminal_title("Downloading Playlist...");
             let (fmt, is_audio) = downloader::build_playlist_format(preset, &cli.codec);
-            print_download_banner(&url, None, &fmt, &config.download_dir, is_audio);
+            print_download_banner(&url, None, &fmt, &config.download_dir, is_audio, accel_label);
             downloader::execute_playlist_download(
                 &url,
                 &fmt,
@@ -186,6 +204,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                 &deps,
                 &config,
                 use_cookies,
+                use_aria2,
             )?;
             notify::send_notification("Playlist Download Complete", &url);
         }
@@ -200,7 +219,7 @@ fn run_cli(cli: Cli) -> Result<()> {
             if let Some(fmt_str) = chosen_format {
                 set_terminal_title(&meta.title);
                 let is_audio = fmt_str == "ba" || fmt_str == "ba/b" || fmt_str.starts_with("ba[");
-                print_download_banner(&meta.title, meta.uploader.as_deref(), &fmt_str, &config.download_dir, is_audio);
+                print_download_banner(&meta.title, meta.uploader.as_deref(), &fmt_str, &config.download_dir, is_audio, accel_label);
                 downloader::execute_download(
                     &url,
                     Some(&fmt_str),
@@ -209,6 +228,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                     &deps,
                     &config,
                     use_cookies,
+                    use_aria2,
                 )?;
                 notify::send_notification("Download Complete", &meta.title);
             } else {
@@ -218,7 +238,7 @@ fn run_cli(cli: Cli) -> Result<()> {
             set_terminal_title("Downloading Video...");
             let final_fmt = downloader::build_format_string(&cli.mode, &cli.codec, cli.format.as_deref());
             let is_audio = final_fmt == "ba" || final_fmt == "ba/b" || final_fmt.starts_with("ba[");
-            print_download_banner(&url, None, &final_fmt, &config.download_dir, is_audio);
+            print_download_banner(&url, None, &final_fmt, &config.download_dir, is_audio, accel_label);
             downloader::execute_download(
                 &url,
                 cli.format.as_deref(),
@@ -227,6 +247,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                 &deps,
                 &config,
                 use_cookies,
+                use_aria2,
             )?;
             notify::send_notification("Download Complete", &url);
         }

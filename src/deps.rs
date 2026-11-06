@@ -4,23 +4,28 @@ use std::path::PathBuf;
 pub struct Dependencies {
     pub ytdlp: bool,
     pub ffmpeg: bool,
+    pub aria2: bool,
     pub js_runtime: Option<String>,
     pub ytdlp_path: Option<PathBuf>,
     pub ffmpeg_path: Option<PathBuf>,
+    pub aria2_path: Option<PathBuf>,
 }
 
 impl Dependencies {
     pub fn check() -> Self {
         let ytdlp_path = which::which("yt-dlp").ok();
         let ffmpeg_path = which::which("ffmpeg").ok();
+        let aria2_path = which::which("aria2c").ok();
         let js_runtime = detect_js_runtime();
 
         Self {
             ytdlp: ytdlp_path.is_some(),
             ffmpeg: ffmpeg_path.is_some(),
+            aria2: aria2_path.is_some(),
             js_runtime,
             ytdlp_path,
             ffmpeg_path,
+            aria2_path,
         }
     }
 
@@ -32,6 +37,15 @@ impl Dependencies {
         }
         args
     }
+
+    pub fn aria2_args() -> Vec<String> {
+        vec![
+            "--downloader".to_string(),
+            "aria2c".to_string(),
+            "--downloader-args".to_string(),
+            "aria2c:-c -j 16 -x 16 -s 16 -k 1M".to_string(),
+        ]
+    }
 }
 
 fn detect_js_runtime() -> Option<String> {
@@ -42,4 +56,3 @@ fn detect_js_runtime() -> Option<String> {
     }
     None
 }
-

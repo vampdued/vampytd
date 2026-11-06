@@ -28,6 +28,7 @@ pub struct DiagnosticResponse {
     pub yt_dlp: bool,
     pub ffmpeg: bool,
     pub js_runtime: Option<String>,
+    pub aria2: bool,
     pub fzf: bool, // Always reported true because Nucleo/Ratatui is embedded!
 }
 
@@ -59,6 +60,7 @@ pub fn run_bridge() -> Result<()> {
             yt_dlp: deps.ytdlp,
             ffmpeg: deps.ffmpeg,
             js_runtime: deps.js_runtime,
+            aria2: deps.aria2,
             fzf: true, // Nucleo/Ratatui TUI is built-in!
         };
         send_response(&mut stdout, &diag)?;
