@@ -380,6 +380,15 @@ pub fn sort_and_filter_formats(formats: &[Format]) -> Vec<Format> {
     valid
 }
 
+pub fn find_best_audio<'a>(formats: &'a [Format]) -> Option<&'a Format> {
+    // Strictly prioritize dedicated audio-only streams (is_audio_only())
+    formats
+        .iter()
+        .find(|f| f.is_audio_only())
+        // Fallback to pre-muxed audio only if no audio-only streams exist
+        .or_else(|| formats.iter().find(|f| f.acodec.as_deref().unwrap_or("none") != "none"))
+}
+
 pub fn is_playlist_url(url: &str) -> bool {
     let lower = url.to_lowercase();
 
@@ -965,5 +974,72 @@ mod tests {
         assert_eq!(fmt.abr, None);
 
         assert_eq!(fmt.bitrate_clean(), "4201k");
+    }
+
+    #[test]
+    fn test_find_best_audio_prioritizes_audio_only() {
+        let video_only = Format {
+            format_id: "605".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("640x360".to_string()),
+            width: Some(640),
+            height: Some(360),
+            fps: Some(24.0),
+            vcodec: Some("vp09.00.20.08".to_string()),
+            acodec: None,
+            vbr: Some(589.0),
+            abr: None,
+            tbr: Some(589.0),
+            filesize: None,
+            filesize_approx: None,
+            format_note: None,
+            dynamic_range: None,
+            language: None,
+        };
+
+        let muxed = Format {
+            format_id: "18".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("640x360".to_string()),
+            width: Some(640),
+            height: Some(360),
+            fps: Some(24.0),
+            vcodec: Some("avc1.42001E".to_string()),
+            acodec: Some("mp4a.40.2".to_string()),
+            vbr: None,
+            abr: Some(96.0),
+            tbr: Some(714.0),
+            filesize: Some(14500000),
+            filesize_approx: None,
+            format_note: None,
+            dynamic_range: None,
+            language: Some("hi".to_string()),
+        };
+
+        let audio_only = Format {
+            format_id: "251".to_string(),
+            ext: "webm".to_string(),
+            resolution: None,
+            width: None,
+            height: None,
+            fps: None,
+            vcodec: None,
+            acodec: Some("opus".to_string()),
+            vbr: None,
+            abr: Some(131.0),
+            tbr: Some(131.0),
+            filesize: Some(2621440),
+            filesize_approx: None,
+            format_note: None,
+            dynamic_range: None,
+            language: Some("hi".to_string()),
+        };
+
+        // Formats list with muxed (#18) before audio_only (#251)
+        let formats = vec![video_only, muxed, audio_only];
+
+        let best = find_best_audio(&formats).expect("Should find an audio stream");
+        assert_eq!(best.format_id, "251");
+        assert_eq!(best.acodec_with_lang(), "Opus [hi]");
     }
 }
