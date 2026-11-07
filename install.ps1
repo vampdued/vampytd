@@ -41,8 +41,19 @@ if ($Uninstall) {
 
 Write-Host "==> Installing VampYTD (Rust Unified Binary)..." -ForegroundColor Cyan
 
-# 1. Build release binary if not skipped
-if (-not $SkipBuild) {
+$LocalExe = Join-Path $PSScriptRoot "vampytd.exe"
+$TargetExe = Join-Path $PSScriptRoot "target\release\vampytd.exe"
+
+# If pre-built vampytd.exe is present (release package), skip cargo build automatically
+$isPrebuilt = Test-Path $LocalExe
+if ($isPrebuilt) {
+    $BuiltExe = $LocalExe
+} else {
+    $BuiltExe = $TargetExe
+}
+
+# 1. Build release binary if not skipped and not prebuilt
+if (-not $SkipBuild -and -not $isPrebuilt) {
     $cargoFound = Get-Command cargo -ErrorAction SilentlyContinue
     if ($cargoFound) {
         $cargoCmd = $cargoFound.Source
@@ -63,7 +74,6 @@ if (-not $SkipBuild) {
     }
 }
 
-$BuiltExe = Join-Path $PSScriptRoot "target\release\vampytd.exe"
 if (-not (Test-Path $BuiltExe)) {
     Write-Error "Built binary not found at $BuiltExe"
 }
@@ -75,6 +85,14 @@ if (-not (Test-Path $InstallDir)) {
 
 Copy-Item -Path $BuiltExe -Destination $ExePath -Force
 Write-Host "  Copied binary to: $ExePath" -ForegroundColor Green
+
+# 2b. Deploy extension to LOCALAPPDATA for permanent hosting
+$SourceExtDir = Join-Path $PSScriptRoot "extension"
+$InstalledExtDir = Join-Path $InstallDir "extension"
+if (Test-Path $SourceExtDir) {
+    Copy-Item -Path $SourceExtDir -Destination $InstallDir -Recurse -Force
+    Write-Host "  Copied extension to: $InstalledExtDir" -ForegroundColor Green
+}
 
 # 3. Write Chrome Native Messaging Manifest
 $ManifestContent = @{
@@ -119,13 +137,13 @@ if ($userPath -notlike "*$InstallDir*") {
 
 Write-Host "==> VampYTD installation complete! Restart your browser to connect." -ForegroundColor Green
 
-$ExtensionDir = Join-Path $PSScriptRoot "extension"
-if (Test-Path $ExtensionDir) {
+$TargetExtPath = if ($InstalledExtDir -and (Test-Path $InstalledExtDir)) { $InstalledExtDir } elseif ($SourceExtDir -and (Test-Path $SourceExtDir)) { $SourceExtDir } else { $null }
+if ($TargetExtPath) {
     Write-Host "`nChrome Extension:" -ForegroundColor Cyan
     Write-Host "  To load in Chrome / Brave / Edge:" -ForegroundColor White
     Write-Host "  1. Navigate to chrome://extensions (or edge://extensions)" -ForegroundColor DarkGray
     Write-Host "  2. Enable 'Developer mode' (top-right toggle)" -ForegroundColor DarkGray
     Write-Host "  3. Click 'Load unpacked' and select:" -ForegroundColor DarkGray
-    Write-Host "     $ExtensionDir" -ForegroundColor Yellow
+    Write-Host "     $TargetExtPath" -ForegroundColor Yellow
 }
 

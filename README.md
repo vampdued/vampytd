@@ -46,7 +46,17 @@ vampytd/
 
 ---
 
-## 🛠️ Quick Installation
+## 🚀 One-Line Direct Install (via GitHub CLI)
+
+If you have the GitHub CLI (`gh`) logged in, you can download, extract, and register the latest VampYTD release binary and Chrome extension with a single command:
+
+```powershell
+gh release download -R vampdued/vampytd --pattern "*.zip" --dir "$env:TEMP\VampYTD-Install" --clobber; Expand-Archive "$env:TEMP\VampYTD-Install\*.zip" -DestinationPath "$env:TEMP\VampYTD-Install\extracted" -Force; & "$env:TEMP\VampYTD-Install\extracted\install.ps1" -SkipBuild; Remove-Item "$env:TEMP\VampYTD-Install" -Recurse -Force
+```
+
+---
+
+## 🛠️ Local Source Installation
 
 Run the PowerShell installer to build the release binary, copy it to `%LOCALAPPDATA%\VampYTD`, and register the Native Messaging host in the Windows Registry:
 

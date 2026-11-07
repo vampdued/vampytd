@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    name: Build & Publish Windows Release
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo Dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Determine Version & Tag
+        id: vars
+        shell: powershell
+        run: |
+          $cargoContent = Get-Content -Raw "Cargo.toml"
+          if ($cargoContent -match 'version\s*=\s*"([^"]+)"') {
+              $ver = $matches[1]
+          } else {
+              throw "Could not determine version from Cargo.toml"
+          }
+
+          $tag = "v$ver"
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+              $tag = $env:GITHUB_REF_NAME
+          }
+
+          Write-Host "Target Tag: $tag (Version: $ver)"
+          "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run Tests
+        shell: powershell
+        run: cargo test --verbose
+
+      - name: Build Optimized Release Binary
+        shell: powershell
+        run: cargo build --release
+
+      - name: Assemble Release ZIP Package
+        shell: powershell
+        run: |
+          $ver = $env:VERSION
+          $tag = $env:TAG
+          $stagingDir = "staging\VampYTD"
+
+          New-Item -ItemType Directory -Path $stagingDir -Force | Out-Null
+          New-Item -ItemType Directory -Path "dist" -Force | Out-Null
+
+          Copy-Item "target\release\vampytd.exe" -Destination "$stagingDir\vampytd.exe" -Force
+          Copy-Item "install.ps1" -Destination "$stagingDir\install.ps1" -Force
+          Copy-Item "README.md" -Destination "$stagingDir\README.md" -Force
+          Copy-Item "extension" -Destination "$stagingDir\extension" -Recurse -Force
+
+          $zipName = "VampYTD-$tag-windows-x64.zip"
+          $zipPath = "dist\$zipName"
+          Compress-Archive -Path "$stagingDir\*" -DestinationPath $zipPath -Force
+
+          $zipHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLower()
+          "$zipHash  $zipName" | Out-File -FilePath "dist\checksums.txt" -Encoding ascii
+
+          Write-Host "Release Artifacts Prepared:"
+          Get-ChildItem dist
+
+      - name: Publish Release to GitHub
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${TAG}"
+          zipFile="dist/VampYTD-${tag}-windows-x64.zip"
+          checksumsFile="dist/checksums.txt"
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists. Updating release assets..."
+            gh release upload "$tag" "$zipFile" "$checksumsFile" --clobber
+          else
+            echo "Creating new release $tag..."
+            gh release create "$tag" "$zipFile" "$checksumsFile" --title "VampYTD ${tag}" --generate-notes
+          fi
