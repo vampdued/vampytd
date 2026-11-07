@@ -630,15 +630,10 @@ pub fn execute_download(
     config: &Config,
 
     use_cookies: bool,
-    use_aria2: bool,
 ) -> Result<()> {
     let mut cmd = Command::new("yt-dlp");
 
     cmd.args(deps.client_args());
-
-    if use_aria2 {
-        cmd.args(Dependencies::aria2_args());
-    }
 
     if use_cookies {
         if let Some(cookie_path) = config.get_cookie_for_url(url) {
@@ -700,15 +695,10 @@ pub fn execute_playlist_download(
     config: &Config,
 
     use_cookies: bool,
-    use_aria2: bool,
 ) -> Result<()> {
     let mut cmd = Command::new("yt-dlp");
 
     cmd.args(deps.client_args());
-
-    if use_aria2 {
-        cmd.args(Dependencies::aria2_args());
-    }
 
     if use_cookies {
         if let Some(cookie_path) = config.get_cookie_for_url(url) {

@@ -38,14 +38,6 @@ impl Dependencies {
         args
     }
 
-    pub fn aria2_args() -> Vec<String> {
-        vec![
-            "--downloader".to_string(),
-            "aria2c".to_string(),
-            "--downloader-args".to_string(),
-            "aria2c:-c -j 16 -x 16 -s 16 -k 1M".to_string(),
-        ]
-    }
 }
 
 fn detect_js_runtime() -> Option<String> {
