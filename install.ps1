@@ -119,3 +119,13 @@ if ($userPath -notlike "*$InstallDir*") {
 
 Write-Host "==> VampYTD installation complete! Restart your browser to connect." -ForegroundColor Green
 
+$ExtensionDir = Join-Path $PSScriptRoot "extension"
+if (Test-Path $ExtensionDir) {
+    Write-Host "`nChrome Extension:" -ForegroundColor Cyan
+    Write-Host "  To load in Chrome / Brave / Edge:" -ForegroundColor White
+    Write-Host "  1. Navigate to chrome://extensions (or edge://extensions)" -ForegroundColor DarkGray
+    Write-Host "  2. Enable 'Developer mode' (top-right toggle)" -ForegroundColor DarkGray
+    Write-Host "  3. Click 'Load unpacked' and select:" -ForegroundColor DarkGray
+    Write-Host "     $ExtensionDir" -ForegroundColor Yellow
+}
+

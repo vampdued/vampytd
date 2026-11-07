@@ -1,34 +1,99 @@
-# VampYTD
+# VampYTD ⚡
 
 Unified high-performance YouTube downloader and Chrome Native Messaging Bridge with embedded Ratatui & Nucleo fuzzy terminal UI.
 
-## Features
+This repository is a **monorepo** containing both the core Rust CLI / native messaging engine and the Manifest V3 browser extension.
 
-- 🚀 **Unified Single Binary**: Combines both the interactive CLI downloader and the Chrome/Edge Native Messaging Bridge into one standalone `vampytd.exe`.
-- 🔍 **Embedded Fuzzy Selector (No `fzf` Required!)**: Features a custom YouTube Crimson-themed TUI powered by **Ratatui** and **Nucleo-Matcher** (the multi-threaded fuzzy engine behind the Helix editor).
-- ⚡ **Zero Subprocess Overhead**: Replaces external `fzf.exe` and PowerShell toast processes with native Rust and WinRT notification APIs.
-- 🎬 **Multi-Stream Selection**: Easily select and combine video and audio streams with keyboard navigation (Spacebar to toggle, Enter to confirm).
-- 🌐 **Seamless Browser Extension Bridge**: Handles length-prefixed JSON messaging on stdin/stdout to integrate directly with the VampYTD Chrome extension.
+---
 
-## Building
+## 📁 Repository Structure
 
-```powershell
-cargo build --release
+```
+vampytd/
+├── src/                  # Core Rust engine & Native Messaging host
+│   ├── bridge.rs         # Browser extension communication bridge (stdin/stdout JSON)
+│   ├── colorizer.rs      # ANSI real-time terminal download stream colorizer
+│   ├── config.rs         # User configuration & cookie management
+│   ├── deps.rs           # Dependency validation (yt-dlp, ffmpeg, JS runtimes)
+│   ├── downloader.rs     # Stream sorting, HDR/language detection & yt-dlp execution
+│   ├── main.rs           # CLI argument parsing & command dispatch
+│   ├── notify.rs         # Native Windows toast notifications (WinRT)
+│   └── tui.rs            # Interactive Ratatui + Nucleo fuzzy format picker
+├── extension/            # Chrome / Brave / Edge browser extension (Manifest V3)
+│   ├── background.js     # Background service worker & native port manager
+│   ├── content.js        # YouTube in-page UI enhancements & context menus
+│   ├── manifest.json     # Extension manifest with fixed deterministic ID
+│   ├── popup.html/js     # Extension popup dashboard & tool diagnostics
+│   └── icons/            # Extension branding and icon assets
+├── install.ps1           # Automated build, registry registration & deployment script
+└── Cargo.toml            # Rust workspace dependencies & release profile
 ```
 
-The optimized, stripped release binary will be placed at `target/release/vampytd.exe`.
+---
 
-## CLI Usage
+## 🌟 Key Features
+
+- 🚀 **Unified Single Binary**: Combines both the interactive CLI downloader and the Chrome/Edge Native Messaging Bridge into one standalone `vampytd.exe`.
+- 🔍 **Embedded Fuzzy Selector (No external `fzf` required)**: Features a custom YouTube Crimson-themed TUI powered by **Ratatui** and **Nucleo-Matcher** (the multi-threaded fuzzy engine behind the Helix editor).
+- 🎨 **Dynamic Stream Inspector**:
+  - Pure numeric bitrate column (`2540k`, `128k`) indexed for fuzzy searching.
+  - Vibrant **`4K 2160p HDR`** badges with automatic dynamic range detection.
+  - Multi-track language tagging (e.g. `Opus [en]`, `AAC [hi]`).
+  - Real-time auto-pairing status line previewing the exact audio track that pairs with the highlighted video stream.
+- ⚡ **Zero Subprocess Overhead**: Replaces external `fzf.exe` and PowerShell toast processes with native Rust and WinRT notification APIs.
+- 🎬 **Multi-Stream Selection**: Easily select and combine video and audio streams with keyboard navigation (`Spacebar` to tag, `Enter` to confirm).
+- 🌐 **Seamless Browser Extension Bridge**: One-click download trigger directly from YouTube pages in Chrome, Brave, and Edge via Chrome Native Messaging.
+
+---
+
+## 🛠️ Quick Installation
+
+Run the PowerShell installer to build the release binary, copy it to `%LOCALAPPDATA%\VampYTD`, and register the Native Messaging host in the Windows Registry:
+
+```powershell
+.\install.ps1
+```
+
+To skip rebuilding the binary when deploying changes:
+```powershell
+.\install.ps1 -SkipBuild
+```
+
+### Loading the Chrome Extension:
+1. Open **`chrome://extensions`** (or **`edge://extensions`** / **`brave://extensions`**).
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked** and select the `vampytd\extension` folder.
+
+---
+
+## ⌨️ TUI Keyboard Controls
+
+When running in interactive mode, the terminal opens the stream selector:
+
+| Key | Action |
+| :--- | :--- |
+| `↑` / `k`, `↓` / `j` | Move selection up / down |
+| `/` | Focus search bar (type filter text) |
+| `v` | Filter to Video-only streams |
+| `a` | Filter to Audio-only streams |
+| `h` | Filter to HD+ streams (720p and above) |
+| `c` | Reset active filter |
+| `Space` | Tag / untag highlighted stream for custom multi-stream merge |
+| `Enter` | Download highlighted stream (or combined tagged streams) |
+| `Esc` / `q` | Cancel / Exit |
+
+---
+
+## 💻 CLI Usage
 
 ### Interactive Mode (Default)
 ```powershell
 vampytd https://www.youtube.com/watch?v=VIDEO_ID
 ```
-Opens the Ratatui interactive format picker with live fuzzy search.
 
 ### Quick Modes
 ```powershell
-# Best quality
+# Best quality available
 vampytd https://www.youtube.com/watch?v=VIDEO_ID --mode quick-max
 
 # Full HD (1080p)
@@ -38,9 +103,28 @@ vampytd https://www.youtube.com/watch?v=VIDEO_ID --mode quick-1080p
 vampytd https://www.youtube.com/watch?v=VIDEO_ID --mode quick-4k
 ```
 
-### Chrome Native Messaging Bridge Mode
+### Playlists
+```powershell
+# Full playlist
+vampytd https://www.youtube.com/playlist?list=PLAYLIST_ID --playlist
+
+# Specific playlist items (e.g. items 1 to 5)
+vampytd https://www.youtube.com/playlist?list=PLAYLIST_ID --playlist --items 1-5
+```
+
+### Update yt-dlp
+```powershell
+vampytd update
+```
+
+### Native Messaging Host Mode (Automated)
 ```powershell
 vampytd bridge
 ```
-Launched automatically by Chrome/Edge when triggered from the browser extension.
+*Invoked automatically by the browser extension via standard I/O length-prefixed JSON.*
 
+---
+
+## 📄 License
+
+MIT
