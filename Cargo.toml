@@ -5,6 +5,11 @@ edition = "2021"
 authors = ["VampDued"]
 description = "High-performance unified YouTube downloader and Chrome Native Messaging Bridge with embedded Ratatui & Nucleo fuzzy TUI"
 license = "MIT"
+repository = "https://github.com/vampdued/vampytd"
+homepage = "https://github.com/vampdued/vampytd"
+readme = "README.md"
+keywords = ["youtube", "downloader", "tui", "ratatui", "chrome-extension"]
+categories = ["command-line-utilities", "multimedia::video"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "cargo"] }
