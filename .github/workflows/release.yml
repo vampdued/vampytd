@@ -96,3 +96,4 @@ jobs:
             echo "Creating new release $tag..."
             gh release create "$tag" "$zipFile" "$checksumsFile" --title "VampYTD ${tag}" --generate-notes
           fi
+
