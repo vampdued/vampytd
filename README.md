@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.0.0-FF0A21?style=flat-square" alt="Version 2.0.0"></a>
+  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.1.0-FF0A21?style=flat-square" alt="Version 2.1.0"></a>
   <img src="https://img.shields.io/badge/rust-2021_edition-FF0A21?style=flat-square&logo=rust&logoColor=white" alt="Rust 2021">
   <img src="https://img.shields.io/badge/platform-Windows_x64-0E0E12?style=flat-square&logo=windows&logoColor=white" alt="Windows x64">
   <img src="https://img.shields.io/badge/engine-yt--dlp-FF0A21?style=flat-square&logo=youtube&logoColor=white" alt="yt-dlp Engine">
