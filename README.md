@@ -1,4 +1,14 @@
-# VampYTD ⚡
+<p align="center">
+  <img src="assets/og-image-dark.png" alt="VampYTD - Watch. Save. Go." width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.0.0-FF0A21?style=flat-square" alt="Version 2.0.0"></a>
+  <img src="https://img.shields.io/badge/rust-2021_edition-FF0A21?style=flat-square&logo=rust&logoColor=white" alt="Rust 2021">
+  <img src="https://img.shields.io/badge/platform-Windows_x64-0E0E12?style=flat-square&logo=windows&logoColor=white" alt="Windows x64">
+  <img src="https://img.shields.io/badge/engine-yt--dlp-FF0A21?style=flat-square&logo=youtube&logoColor=white" alt="yt-dlp Engine">
+  <img src="https://img.shields.io/badge/license-MIT-0E0E12?style=flat-square" alt="License MIT">
+</p>
 
 Unified high-performance YouTube downloader and Chrome Native Messaging Bridge with embedded Ratatui & Nucleo fuzzy terminal UI.
 
@@ -18,13 +28,16 @@ vampytd/
 │   ├── downloader.rs     # Stream sorting, HDR/language detection & yt-dlp execution
 │   ├── main.rs           # CLI argument parsing & command dispatch
 │   ├── notify.rs         # Native Windows toast notifications (WinRT)
-│   └── tui.rs            # Interactive Ratatui + Nucleo fuzzy format picker
+│   └── tui.rs            # Interactive Ratatui + Nucleo fuzzy format picker (Vamp theme)
 ├── extension/            # Chrome / Brave / Edge browser extension (Manifest V3)
 │   ├── background.js     # Background service worker & native port manager
 │   ├── content.js        # YouTube in-page UI enhancements & context menus
 │   ├── manifest.json     # Extension manifest with fixed deterministic ID
-│   ├── popup.html/js     # Extension popup dashboard & tool diagnostics
-│   └── icons/            # Extension branding and icon assets
+│   ├── popup.html/js     # Extension popup dashboard, tool diagnostics & Inter fonts
+│   ├── fonts/            # Offline bundled Inter variable & OTF font family
+│   └── icons/            # Theme-adaptive SVG vector logos & PNG icons
+├── assets/               # Brand assets, multi-res .ico, and social cards
+├── build.rs              # Windows resource compiler embedding .ico into vampytd.exe
 ├── install.ps1           # Automated build, registry registration & deployment script
 └── Cargo.toml            # Rust workspace dependencies & release profile
 ```

@@ -69,6 +69,7 @@ jobs:
           Copy-Item "install.ps1" -Destination "$stagingDir\install.ps1" -Force
           Copy-Item "README.md" -Destination "$stagingDir\README.md" -Force
           Copy-Item "extension" -Destination "$stagingDir\extension" -Recurse -Force
+          Copy-Item "assets" -Destination "$stagingDir\assets" -Recurse -Force
 
           $zipName = "VampYTD-$tag-windows-x64.zip"
           $zipPath = "dist\$zipName"

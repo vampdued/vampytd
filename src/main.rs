@@ -95,18 +95,18 @@ fn print_download_banner(
     let uploader_str = uploader.unwrap_or("YouTube");
     let container = if is_audio { "Audio (Native/Opus/M4A)" } else { "MKV (Matroska Universal)" };
     println!();
-    println!("\x1b[31;1m================================================================================\x1b[0m");
+    println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
     println!("\x1b[1;37m>> Title:       \x1b[0m\x1b[33;1m{}\x1b[0m", title);
     println!("\x1b[1;37m>> Channel:     \x1b[0m\x1b[36m{}\x1b[0m", uploader_str);
-    println!("\x1b[1;37m>> Stream:      \x1b[0m\x1b[32;1m{}\x1b[0m", format_str);
+    println!("\x1b[1;37m>> Stream:      \x1b[0m\x1b[38;2;255;10;33;1m{}\x1b[0m", format_str);
     println!("\x1b[1;37m>> Container:   \x1b[0m\x1b[35;1m{}\x1b[0m", container);
-    println!("\x1b[1;37m>> Destination: \x1b[0m\x1b[34m{}\x1b[0m", dest_dir.display());
-    println!("\x1b[31;1m================================================================================\x1b[0m");
+    println!("\x1b[1;37m>> Destination: \x1b[0m\x1b[38;2;164;164;176m{}\x1b[0m", dest_dir.display());
+    println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
     println!();
 }
 
 fn run_cli(cli: Cli) -> Result<()> {
-    println!("\x1b[31;1m>> VampYTD v{}\x1b[0m", env!("CARGO_PKG_VERSION"));
+    println!("\x1b[38;2;255;10;33;1m>> VampYTD v{}\x1b[0m", env!("CARGO_PKG_VERSION"));
 
     let deps = deps::Dependencies::check();
     if !deps.ytdlp {

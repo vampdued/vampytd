@@ -25,6 +25,9 @@ regex = "1.11"
 chrono = "0.4"
 directories = "6.0"
 
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
 [profile.release]
 opt-level = 3
 lto = true

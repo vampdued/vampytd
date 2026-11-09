@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>VampYTD Brand Guidelines</title>
+<meta name="description" content="Logo, colour, typography and asset guidelines for VampYTD.">
+<link rel="icon" href="favicon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="favicon/apple-touch-icon.png">
+<link rel="manifest" href="favicon/site.webmanifest">
+<link rel="stylesheet" href="tokens/colors.css">
+<style>
+@font-face{font-family:"Inter";src:url(fonts/Inter-Regular.otf) format("opentype");font-weight:400;font-display:swap}
+@font-face{font-family:"Inter";src:url(fonts/Inter-SemiBold.otf) format("opentype");font-weight:600;font-display:swap}
+@font-face{font-family:"Inter";src:url(fonts/Inter-Bold.otf) format("opentype");font-weight:700;font-display:swap}
+@font-face{font-family:"Inter";src:url(fonts/Inter-Black.otf) format("opentype");font-weight:900;font-display:swap}
+
+:root{
+  --radius:1rem;
+  --gutter:clamp(1rem,4vw,3rem);
+  --measure:74rem;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  accent-color:var(--brand);
+  scrollbar-width:thin;
+  scrollbar-color:light-dark(#b9b9c2,#4a4a55) transparent;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-block-start:5rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--surface);color:var(--text);font:400 1rem/1.6 var(--font);-webkit-font-smoothing:antialiased;text-wrap:pretty}
+img,svg{display:block;max-inline-size:100%;block-size:auto}
+h1,h2,h3{line-height:1.1;margin:0;text-wrap:balance}
+p{margin:0}
+a{color:var(--brand-text);text-underline-offset:.2em}
+code,pre{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.875em}
+::selection{background:var(--vamp-red);color:var(--vamp-ink)}
+:focus-visible{outline:3px solid var(--brand-text);outline-offset:3px;border-radius:.25rem}
+
+/* ---- layout */
+.wrap{max-inline-size:var(--measure);margin-inline:auto;padding-inline:var(--gutter)}
+header.site{position:sticky;inset-block-start:0;z-index:10;background:color-mix(in oklab,var(--surface) 88%,transparent);backdrop-filter:blur(12px);border-block-end:1px solid var(--border)}
+header.site .wrap{display:flex;align-items:center;gap:1.5rem;padding-block:.75rem;flex-wrap:wrap}
+header.site img{block-size:1.75rem;inline-size:auto}
+nav ul{display:flex;flex-wrap:wrap;flex-wrap:balance;gap:.25rem 1.25rem;list-style:none;margin:0;padding:0}
+nav{margin-inline-start:auto}
+nav a{color:var(--text-muted);text-decoration:none;font-size:.875rem;font-weight:600}
+nav a:hover{color:var(--text)}
+
+.hero{padding-block:clamp(3rem,9vw,7rem) clamp(2rem,5vw,4rem);display:grid;gap:2rem}
+.hero .eyebrow{font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.8125rem;color:var(--brand-text)}
+.hero h1{font-size:clamp(2.25rem,6vw,4.5rem);font-weight:900;letter-spacing:-.03em;max-inline-size:16ch}
+.hero p.lede{font-size:1.125rem;color:var(--text-muted);max-inline-size:56ch}
+.hero .mark{inline-size:min(100%,34rem)}
+
+section.block{padding-block:clamp(2.5rem,6vw,4.5rem);border-block-start:1px solid var(--border)}
+.block>.wrap>header{display:grid;gap:.5rem;margin-block-end:2rem;max-inline-size:60ch}
+.block .kicker{font-size:.8125rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.block h2{font-size:clamp(1.75rem,3.5vw,2.5rem);font-weight:900;letter-spacing:-.02em}
+.block header p{color:var(--text-muted)}
+
+.grid{display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr))}
+.grid.wide{grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))}
+.grid.tight{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))}
+
+.card{container-type:inline-size;background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;display:grid;gap:1rem;align-content:start}
+.card h3{font-size:1.0625rem;font-weight:700}
+.card p.note{color:var(--text-muted);font-size:.9375rem}
+
+.stage{display:grid;place-items:center;border-radius:calc(var(--radius) - .25rem);min-block-size:11rem;padding:2rem}
+.stage img{inline-size:min(100%,var(--w,20rem))}
+.on-white{background:#fff;color:#0E0E12}
+.on-ink{background:#0E0E12;color:#fff}
+.on-mist{background:#F4F4F6}
+.on-red{background:#FF0A21}
+.on-graphite{background:#1C1C22}
+.stage.bordered{border:1px solid var(--border)}
+
+/* ---- clear space */
+.clear{--lh:6rem;--x:calc(var(--lh) * .268);display:grid;place-items:center;padding:2rem;border-radius:calc(var(--radius) - .25rem);background:#fff}
+.clear .box{padding:var(--x);outline:2px dashed #FF0A21;outline-offset:0;position:relative;background:repeating-linear-gradient(45deg,rgb(255 10 33 / .07) 0 6px,transparent 6px 12px)}
+.clear .box img{block-size:var(--lh);inline-size:auto;background:#fff}
+.clear .box .tag{position:absolute;font:700 .6875rem/1 var(--font);color:#C20016;background:#fff;padding:.125rem .375rem;border-radius:.25rem;border:1px solid #FF0A21}
+.tag.t{inset-block-start:calc(var(--x) / 2 - .5rem);inset-inline-start:50%;translate:-50% 0}
+.tag.l{inset-inline-start:calc(var(--x) / 2 - .5rem);inset-block-start:50%;translate:0 -50%}
+.tag.b{inset-block-end:calc(var(--x) / 2 - .5rem);inset-inline-start:50%;translate:-50% 0}
+.tag.r{inset-inline-end:calc(var(--x) / 2 - .5rem);inset-block-start:50%;translate:0 -50%}
+
+/* ---- minimum sizes */
+.mins{display:flex;flex-wrap:wrap;align-items:end;gap:2rem 3rem;background:#fff;border-radius:calc(var(--radius) - .25rem);padding:2rem;color:#0E0E12}
+.mins figure{margin:0;display:grid;gap:.5rem;justify-items:start}
+.mins figcaption{font-size:.8125rem;color:#62626E;font-weight:600}
+
+/* ---- colour */
+.swatches{display:grid;gap:1.25rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr))}
+.swatch{display:grid;grid-template-rows:subgrid;grid-row:span 3;gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:clip;background:var(--surface-raised)}
+.chip{min-block-size:9rem;padding:1rem;display:flex;align-items:end;font-weight:900;font-size:1.5rem;letter-spacing:-.02em}
+.swatch .meta{padding:1rem;display:grid;gap:.125rem;font-size:.9375rem}
+.swatch .meta b{font-size:1rem}
+.swatch .meta span{color:var(--text-muted);font-variant-numeric:tabular-nums}
+.swatch .use{padding:0 1rem 1rem;color:var(--text-muted);font-size:.875rem}
+.copy{all:unset;cursor:pointer;margin:0 1rem 1rem;justify-self:start;font:600 .8125rem var(--font);padding:.375rem .75rem;border-radius:999px;border:1px solid var(--border);color:var(--text);background:var(--surface)}
+.copy:hover{border-color:var(--brand-text)}
+.copy:focus-visible{outline:3px solid var(--brand-text);outline-offset:2px}
+.swatch.has-copy{grid-row:span 4}
+.support{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr));margin-block-start:1.25rem}
+.support .s{border:1px solid var(--border);border-radius:.75rem;overflow:clip;font-size:.8125rem;background:var(--surface-raised)}
+.support .s div:first-child{block-size:3.5rem}
+.support .s div:last-child{padding:.5rem .75rem;display:grid}
+.support .s span{color:var(--text-muted);font-variant-numeric:tabular-nums}
+
+table{inline-size:100%;min-inline-size:38rem;border-collapse:collapse;font-size:.9375rem}
+caption{text-align:start;font-weight:700;padding-block-end:.75rem}
+th,td{text-align:start;padding:.75rem .75rem;border-block-end:1px solid var(--border);vertical-align:middle}
+th{font-size:.8125rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
+td.num{font-variant-numeric:tabular-nums;font-weight:700}
+.sample{display:inline-grid;place-items:center;inline-size:3rem;block-size:2.25rem;border-radius:.5rem;font-weight:900;border:1px solid transparent}
+.yes::before{content:"✓ ";font-weight:900}
+.no::before{content:"✕ ";font-weight:900}
+.tableWrap{overflow-x:auto}
+
+/* ---- type */
+.type-hero{font-weight:900;font-size:clamp(4rem,14vw,9rem);letter-spacing:-.04em;line-height:.9}
+.scale{display:grid;gap:.75rem}
+.scale div{display:grid;gap:.25rem;border-block-end:1px solid var(--border);padding-block-end:.75rem}
+.scale small{color:var(--text-muted);font-size:.8125rem}
+
+/* ---- misuse */
+.misuse figure{margin:0;display:grid;gap:.75rem}
+.misuse .stage{min-block-size:9rem;border:1px solid var(--border);overflow:clip}
+.misuse figcaption{font-weight:600;font-size:.9375rem}
+.do-figs .stage{min-block-size:9rem}
+
+/* ---- code + downloads */
+pre{background:var(--surface-raised);border:1px solid var(--border);border-radius:.75rem;padding:1rem;overflow-x:auto;line-height:1.5;margin:0}
+.files{list-style:none;margin:0;padding:0;display:grid;gap:.375rem;font-size:.8125rem}
+.files a{color:var(--text);text-decoration:none;word-break:break-all}
+.files a:hover{color:var(--brand-text);text-decoration:underline}
+.dl-preview{display:grid;place-items:center;border-radius:.75rem;min-block-size:7rem;padding:1rem;background:#fff;border:1px solid var(--border)}
+.dl-preview img{max-block-size:6rem;inline-size:auto}
+@container (min-width:26rem){.files{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:1rem}}
+
+footer.site{border-block-start:1px solid var(--border);padding-block:2.5rem;color:var(--text-muted);font-size:.875rem}
+footer.site .wrap{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between}
+
+#toast{position:fixed;inset-block-end:1.25rem;inset-inline:0;margin-inline:auto;inline-size:max-content;max-inline-size:90vw;background:var(--text);color:var(--surface);padding:.625rem 1rem;border-radius:999px;font-weight:600;font-size:.875rem;opacity:0;pointer-events:none}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .2s}.copy{transition:border-color .15s}}
+
+@media (forced-colors:active){
+  .chip,.support .s div:first-child{forced-color-adjust:none;border:1px solid CanvasText}
+  .card,.swatch,.support .s{border-color:CanvasText}
+  .clear .box{outline-color:CanvasText}
+}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="#top" aria-label="VampYTD brand guidelines, top">
+      <picture>
+        <source srcset="logo/vampytd-horizontal-reverse.svg" media="(prefers-color-scheme: dark)">
+        <img src="logo/vampytd-horizontal-color.svg" alt="VampYTD" width="1906" height="410">
+      </picture>
+    </a>
+    <nav aria-label="Sections">
+      <ul>
+        <li><a href="#logo">Logo</a></li>
+        <li><a href="#space">Space &amp; size</a></li>
+        <li><a href="#colour">Colour</a></li>
+        <li><a href="#type">Type</a></li>
+        <li><a href="#app">App &amp; web</a></li>
+        <li><a href="#misuse">Usage</a></li>
+        <li><a href="#downloads">Downloads</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap hero">
+  <p class="eyebrow">Brand guidelines · v1.0 · November 2026</p>
+  <h1>One play button, one clear voice.</h1>
+  <p class="lede">Everything you need to use the VampYTD identity consistently: logo files, clear space, colour, type, app icons, favicons and social images.</p>
+  <picture class="mark">
+    <source srcset="logo/vampytd-horizontal-reverse.svg" media="(prefers-color-scheme: dark)">
+    <img src="logo/vampytd-horizontal-color.svg" alt="VampYTD logo: a red rounded play-button ring around a dark triangle, followed by the wordmark" width="1906" height="410">
+  </picture>
+</div>
+
+<!-- ============ LOGO -->
+<section class="block" id="logo">
+  <div class="wrap">
+    <header>
+      <p class="kicker">01 · Logo</p>
+      <h2>The logo</h2>
+      <p>The mark is a rounded play-button ring with a solid triangle at its centre. The wordmark is set in Inter Black: <b>Vamp</b> in Ink, <b>YTD</b> in Vamp Red. Use the supplied files; never retype or redraw it.</p>
+    </header>
+    <div class="grid wide">
+      <article class="card">
+        <h3>Horizontal · primary</h3>
+        <div class="stage on-white bordered" style="--w:22rem"><img src="logo/vampytd-horizontal-color.svg" alt="Horizontal logo, full colour" width="1906" height="410"></div>
+        <p class="note">Default choice for headers, documents and video watermarks.</p>
+      </article>
+      <article class="card">
+        <h3>Stacked</h3>
+        <div class="stage on-white bordered" style="--w:11rem"><img src="logo/vampytd-stacked-color.svg" alt="Stacked logo, full colour" width="1003" height="689"></div>
+        <p class="note">For square or narrow spaces such as posters, covers and sign-in screens.</p>
+      </article>
+      <article class="card">
+        <h3>Wordmark</h3>
+        <div class="stage on-white bordered" style="--w:20rem"><img src="logo/vampytd-wordmark-color.svg" alt="Wordmark only, full colour" width="1472" height="282"></div>
+        <p class="note">Only where the icon already appears nearby, for example next to an avatar.</p>
+      </article>
+      <article class="card">
+        <h3>Icon</h3>
+        <div class="stage on-white bordered" style="--w:8rem"><img src="icon/vampytd-icon-color.svg" alt="Icon, full colour" width="512" height="512"></div>
+        <p class="note">Avatars, favicons, app tiles and any place the name is already clear.</p>
+      </article>
+    </div>
+
+    <h3 style="margin-block:2.5rem 1rem;font-size:1.25rem">Colourways and backgrounds</h3>
+    <div class="grid wide">
+      <figure class="card" style="margin:0">
+        <div class="stage on-white bordered" style="--w:16rem"><img src="logo/vampytd-horizontal-color.svg" alt="Full colour logo on white" width="1906" height="410"></div>
+        <figcaption><b>Full colour</b> on white, Mist or very light photos.</figcaption>
+      </figure>
+      <figure class="card" style="margin:0">
+        <div class="stage on-ink" style="--w:16rem"><img src="logo/vampytd-horizontal-reverse.svg" alt="Reverse logo on Ink" width="1906" height="410"></div>
+        <figcaption><b>Reverse</b> on Ink, Graphite or dark photos.</figcaption>
+      </figure>
+      <figure class="card" style="margin:0">
+        <div class="stage on-mist bordered" style="--w:16rem"><img src="logo/vampytd-horizontal-black.svg" alt="One-colour black logo on light grey" width="1906" height="410"></div>
+        <figcaption><b>Black</b> for one-colour print, stamps and fax-style output.</figcaption>
+      </figure>
+      <figure class="card" style="margin:0">
+        <div class="stage on-red" style="--w:16rem"><img src="logo/vampytd-horizontal-white.svg" alt="One-colour white logo on red" width="1906" height="410"></div>
+        <figcaption><b>White</b> on Vamp Red or busy imagery.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SPACE -->
+<section class="block" id="space">
+  <div class="wrap">
+    <header>
+      <p class="kicker">02 · Space &amp; size</p>
+      <h2>Clear space and minimum size</h2>
+      <p>Keep a margin of <b>x</b> around the logo, where x is half the cap height of the V in the wordmark. Nothing (text, edges, other logos) enters that zone.</p>
+    </header>
+    <div class="grid wide">
+      <article class="card">
+        <h3>Clear space</h3>
+        <div class="clear">
+          <div class="box">
+            <img src="logo/vampytd-horizontal-color.svg" alt="Horizontal logo inside its dashed clear-space boundary" width="1906" height="410">
+            <span class="tag t" aria-hidden="true">x</span><span class="tag l" aria-hidden="true">x</span><span class="tag b" aria-hidden="true">x</span><span class="tag r" aria-hidden="true">x</span>
+          </div>
+        </div>
+        <p class="note">The same margin applies to the stacked logo and the icon (measured from the ring).</p>
+      </article>
+      <article class="card">
+        <h3>Minimum sizes</h3>
+        <div class="mins">
+          <figure><img src="logo/vampytd-horizontal-color.svg" alt="" width="120" height="26" style="inline-size:120px"><figcaption>Horizontal · 120 px wide</figcaption></figure>
+          <figure><img src="logo/vampytd-stacked-color.svg" alt="" width="72" height="49" style="inline-size:72px"><figcaption>Stacked · 72 px</figcaption></figure>
+          <figure><img src="logo/vampytd-wordmark-color.svg" alt="" width="90" height="17" style="inline-size:90px"><figcaption>Wordmark · 90 px</figcaption></figure>
+          <figure><img src="icon/vampytd-icon-color.svg" alt="" width="16" height="16" style="inline-size:16px"><figcaption>Icon · 16 px</figcaption></figure>
+        </div>
+        <p class="note">In print: horizontal 30 mm, stacked 18 mm, icon 5 mm. Below these sizes the ring gap closes up and the triangle stops reading.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COLOUR -->
+<section class="block" id="colour">
+  <div class="wrap">
+    <header>
+      <p class="kicker">03 · Colour</p>
+      <h2>Colour</h2>
+      <p>Red does the shouting, Ink does the talking. Keep large areas calm and let Vamp Red mark the one thing that matters.</p>
+    </header>
+
+    <div class="swatches">
+      <article class="swatch has-copy">
+        <div class="chip" style="background:#FF0A21;color:#0E0E12">Vamp Red</div>
+        <div class="meta"><b>#FF0A21</b><span>RGB 255 10 33</span></div>
+        <div class="use">Primary. Icon ring, “YTD”, key actions and highlights.</div>
+        <button class="copy" type="button" data-copy="#FF0A21">Copy HEX</button>
+      </article>
+      <article class="swatch has-copy">
+        <div class="chip" style="background:#0E0E12;color:#fff">Ink</div>
+        <div class="meta"><b>#0E0E12</b><span>RGB 14 14 18</span></div>
+        <div class="use">Primary. “Vamp”, play triangle, text and dark surfaces.</div>
+        <button class="copy" type="button" data-copy="#0E0E12">Copy HEX</button>
+      </article>
+      <article class="swatch has-copy">
+        <div class="chip" style="background:#fff;color:#0E0E12;box-shadow:inset 0 0 0 1px #E2E2E7">White</div>
+        <div class="meta"><b>#FFFFFF</b><span>RGB 255 255 255</span></div>
+        <div class="use">Primary. Light surfaces and the reverse wordmark.</div>
+        <button class="copy" type="button" data-copy="#FFFFFF">Copy HEX</button>
+      </article>
+    </div>
+
+    <div class="support" aria-label="Supporting colours">
+      <div class="s"><div style="background:#E00019"></div><div><b>Red Deep</b><span>#E00019</span></div></div>
+      <div class="s"><div style="background:#1C1C22"></div><div><b>Graphite</b><span>#1C1C22</span></div></div>
+      <div class="s"><div style="background:#62626E"></div><div><b>Slate</b><span>#62626E</span></div></div>
+      <div class="s"><div style="background:#F4F4F6"></div><div><b>Mist</b><span>#F4F4F6</span></div></div>
+      <div class="s"><div style="background:#E2E2E7"></div><div><b>Line</b><span>#E2E2E7</span></div></div>
+    </div>
+
+    <div class="card" style="margin-block-start:2rem">
+      <div class="tableWrap">
+        <table>
+          <caption>Contrast of common pairings (WCAG 2.2)</caption>
+          <thead><tr><th scope="col">Sample</th><th scope="col">Foreground on background</th><th scope="col">Ratio</th><th scope="col">Use for</th></tr></thead>
+          <tbody>
+            <tr><td><span class="sample" style="background:#fff;color:#0E0E12;border-color:#E2E2E7">Aa</span></td><td>Ink on White</td><td class="num">19.3 : 1</td><td class="yes">Body text, all sizes</td></tr>
+            <tr><td><span class="sample" style="background:#0E0E12;color:#fff">Aa</span></td><td>White on Ink</td><td class="num">19.3 : 1</td><td class="yes">Body text, all sizes</td></tr>
+            <tr><td><span class="sample" style="background:#fff;color:#E00019;border-color:#E2E2E7">Aa</span></td><td>Red Deep on White</td><td class="num">5.0 : 1</td><td class="yes">Links and small red text on light</td></tr>
+            <tr><td><span class="sample" style="background:#0E0E12;color:#FF0A21">Aa</span></td><td>Vamp Red on Ink</td><td class="num">4.9 : 1</td><td class="yes">Red text and icons on dark</td></tr>
+            <tr><td><span class="sample" style="background:#FF0A21;color:#0E0E12">Aa</span></td><td>Ink on Vamp Red</td><td class="num">4.9 : 1</td><td class="yes">Text on red buttons and banners</td></tr>
+            <tr><td><span class="sample" style="background:#fff;color:#FF0A21;border-color:#E2E2E7">Aa</span></td><td>Vamp Red on White</td><td class="num">3.9 : 1</td><td class="no">Large text (24 px+) and graphics only</td></tr>
+            <tr><td><span class="sample" style="background:#FF0A21;color:#fff">Aa</span></td><td>White on Vamp Red</td><td class="num">3.9 : 1</td><td class="no">Large text and the white logo only; use Ink for small text</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TYPE -->
+<section class="block" id="type">
+  <div class="wrap">
+    <header>
+      <p class="kicker">04 · Typography</p>
+      <h2>Typography</h2>
+      <p>The logotype is Inter Black, already outlined in the artwork. For everything else use Inter, free and open source (SIL OFL), included in <code>fonts/</code>.</p>
+    </header>
+    <div class="grid wide">
+      <article class="card">
+        <div class="type-hero" aria-label="Aa in Inter Black">Aa</div>
+        <p class="note"><b>Inter Black</b> for display headlines. <b>Inter Bold / SemiBold</b> for UI and subheads. <b>Inter Regular</b> for body copy.</p>
+      </article>
+      <article class="card">
+        <div class="scale">
+          <div><small>Display · 56 / 900</small><span style="font-size:3.5rem;font-weight:900;letter-spacing:-.03em;line-height:1">Watch. Save. Go.</span></div>
+          <div><small>Heading · 32 / 900</small><span style="font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1.1">Your downloads, sorted</span></div>
+          <div><small>Subhead · 20 / 700</small><span style="font-size:1.25rem;font-weight:700">Paste a link to begin</span></div>
+          <div><small>Body · 16 / 400</small><span>Short, plain sentences in Inter Regular at a comfortable line length.</span></div>
+          <div><small>Caption · 13 / 600</small><span style="font-size:.8125rem;font-weight:600;color:var(--text-muted)">Format · Quality · Size</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP -->
+<section class="block" id="app">
+  <div class="wrap">
+    <header>
+      <p class="kicker">05 · App &amp; web</p>
+      <h2>App icons, favicons and social</h2>
+      <p>The icon in app tiles is optically centred: it sits slightly right of the geometric centre because the point of a play triangle carries less visual weight than its flat side.</p>
+    </header>
+    <div class="grid tight">
+      <figure class="card" style="margin:0"><img src="app-icon/vampytd-app-icon-light.svg" alt="App icon, light" width="512" height="512"><figcaption>Light · default</figcaption></figure>
+      <figure class="card" style="margin:0"><img src="app-icon/vampytd-app-icon-dark.svg" alt="App icon, dark" width="512" height="512"><figcaption>Dark</figcaption></figure>
+      <figure class="card" style="margin:0"><img src="app-icon/vampytd-app-icon-red.svg" alt="App icon, red" width="512" height="512"><figcaption>Red · campaigns</figcaption></figure>
+    </div>
+
+    <div class="grid wide" style="margin-block-start:1.25rem">
+      <article class="card">
+        <h3>Favicon &amp; PWA setup</h3>
+        <p class="note">The SVG favicon swaps its triangle to white in dark browser themes. Paste into <code>&lt;head&gt;</code>:</p>
+<pre><code>&lt;link rel="icon" href="/favicon.svg" type="image/svg+xml"&gt;
+&lt;link rel="icon" href="/favicon.ico" sizes="48x48"&gt;
+&lt;link rel="apple-touch-icon" href="/apple-touch-icon.png"&gt;
+&lt;link rel="manifest" href="/site.webmanifest"&gt;
+&lt;meta name="theme-color" content="#0E0E12"&gt;</code></pre>
+      </article>
+      <article class="card">
+        <h3>Social images</h3>
+        <div class="grid tight" style="gap:.75rem">
+          <img src="social/og-image-dark.png" alt="Open Graph image, dark" width="1200" height="630" style="border-radius:.5rem;border:1px solid var(--border)">
+          <img src="social/og-image-light.png" alt="Open Graph image, light" width="1200" height="630" style="border-radius:.5rem;border:1px solid var(--border)">
+        </div>
+        <p class="note">Open Graph 1200×630, X header 1500×500, YouTube banner 2560×1440 (logo sits in the 1546×423 safe area) and 800 px avatars. All in <code>social/</code>.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MISUSE -->
+<section class="block" id="misuse">
+  <div class="wrap">
+    <header>
+      <p class="kicker">06 · Usage</p>
+      <h2>Please don’t</h2>
+      <p>The logo works because it never changes. These are the common ways it gets broken.</p>
+    </header>
+    <div class="grid misuse">
+      <figure><div class="stage on-white"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem;scale:1.35 .8"></div><figcaption class="no">Don’t stretch or squash it.</figcaption></figure>
+      <figure><div class="stage on-white"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem;rotate:-12deg"></div><figcaption class="no">Don’t rotate or tilt it.</figcaption></figure>
+      <figure><div class="stage on-white"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem;filter:hue-rotate(200deg) saturate(1.4)"></div><figcaption class="no">Don’t recolour it.</figcaption></figure>
+      <figure><div class="stage on-white"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem;filter:drop-shadow(.5rem .5rem .25rem rgb(0 0 0 / .45))"></div><figcaption class="no">Don’t add shadows, glows or outlines.</figcaption></figure>
+      <figure><div class="stage on-red"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem"></div><figcaption class="no">Don’t put the colour logo on red. Use the white version.</figcaption></figure>
+      <figure><div class="stage on-white"><span aria-hidden="true" style="font:700 2rem/1 Georgia,serif;color:#0E0E12">Vamp<span style="color:#FF0A21">YTD</span></span></div><figcaption class="no">Don’t retype the wordmark in another font.</figcaption></figure>
+    </div>
+    <h3 style="margin-block:2.5rem 1rem;font-size:1.25rem">Do</h3>
+    <div class="grid misuse do-figs">
+      <figure><div class="stage on-ink"><img src="logo/vampytd-horizontal-reverse.svg" alt="" width="1906" height="410" style="--w:12rem"></div><figcaption class="yes">Use the reverse logo on dark backgrounds.</figcaption></figure>
+      <figure><div class="stage on-red"><img src="logo/vampytd-horizontal-white.svg" alt="" width="1906" height="410" style="--w:12rem"></div><figcaption class="yes">Use the white logo on red.</figcaption></figure>
+      <figure><div class="stage on-white"><img src="logo/vampytd-horizontal-color.svg" alt="" width="1906" height="410" style="--w:12rem"></div><figcaption class="yes">Scale proportionally and keep the clear space.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOWNLOADS -->
+<section class="block" id="downloads">
+  <div class="wrap">
+    <header>
+      <p class="kicker">07 · Downloads</p>
+      <h2>Assets</h2>
+      <p>Prefer SVG wherever it is supported; it stays sharp at any size. PNGs are transparent unless they are app icons or social images.</p>
+    </header>
+    <div class="grid wide">
+      <article class="card dl"><h3>Logo · horizontal</h3><div class="dl-preview "><img src="logo/vampytd-horizontal-color.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="logo/vampytd-horizontal-black.svg" download>vampytd-horizontal-black.svg</a></li><li><a href="logo/vampytd-horizontal-color.svg" download>vampytd-horizontal-color.svg</a></li><li><a href="logo/vampytd-horizontal-reverse.svg" download>vampytd-horizontal-reverse.svg</a></li><li><a href="logo/vampytd-horizontal-white.svg" download>vampytd-horizontal-white.svg</a></li><li><a href="png/logo-horizontal-black.png" download>logo-horizontal-black.png</a></li><li><a href="png/logo-horizontal-black@2x.png" download>logo-horizontal-black@2x.png</a></li><li><a href="png/logo-horizontal-color.png" download>logo-horizontal-color.png</a></li><li><a href="png/logo-horizontal-color@2x.png" download>logo-horizontal-color@2x.png</a></li></ul></article><article class="card dl"><h3>Logo · stacked</h3><div class="dl-preview "><img src="logo/vampytd-stacked-color.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="logo/vampytd-stacked-black.svg" download>vampytd-stacked-black.svg</a></li><li><a href="logo/vampytd-stacked-color.svg" download>vampytd-stacked-color.svg</a></li><li><a href="logo/vampytd-stacked-reverse.svg" download>vampytd-stacked-reverse.svg</a></li><li><a href="logo/vampytd-stacked-white.svg" download>vampytd-stacked-white.svg</a></li><li><a href="png/logo-stacked-black.png" download>logo-stacked-black.png</a></li><li><a href="png/logo-stacked-black@2x.png" download>logo-stacked-black@2x.png</a></li><li><a href="png/logo-stacked-color.png" download>logo-stacked-color.png</a></li><li><a href="png/logo-stacked-color@2x.png" download>logo-stacked-color@2x.png</a></li></ul></article><article class="card dl"><h3>Wordmark</h3><div class="dl-preview "><img src="logo/vampytd-wordmark-color.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="logo/vampytd-wordmark-black.svg" download>vampytd-wordmark-black.svg</a></li><li><a href="logo/vampytd-wordmark-color.svg" download>vampytd-wordmark-color.svg</a></li><li><a href="logo/vampytd-wordmark-reverse.svg" download>vampytd-wordmark-reverse.svg</a></li><li><a href="logo/vampytd-wordmark-white.svg" download>vampytd-wordmark-white.svg</a></li><li><a href="png/logo-wordmark-black.png" download>logo-wordmark-black.png</a></li><li><a href="png/logo-wordmark-black@2x.png" download>logo-wordmark-black@2x.png</a></li><li><a href="png/logo-wordmark-color.png" download>logo-wordmark-color.png</a></li><li><a href="png/logo-wordmark-color@2x.png" download>logo-wordmark-color@2x.png</a></li></ul></article><article class="card dl"><h3>Icon</h3><div class="dl-preview "><img src="icon/vampytd-icon-color.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="icon/vampytd-icon-black.svg" download>vampytd-icon-black.svg</a></li><li><a href="icon/vampytd-icon-color.svg" download>vampytd-icon-color.svg</a></li><li><a href="icon/vampytd-icon-reverse.svg" download>vampytd-icon-reverse.svg</a></li><li><a href="icon/vampytd-icon-white.svg" download>vampytd-icon-white.svg</a></li><li><a href="png/icon-color-1024.png" download>icon-color-1024.png</a></li><li><a href="png/icon-color-128.png" download>icon-color-128.png</a></li><li><a href="png/icon-color-16.png" download>icon-color-16.png</a></li><li><a href="png/icon-color-256.png" download>icon-color-256.png</a></li><li><a href="png/icon-color-32.png" download>icon-color-32.png</a></li><li><a href="png/icon-color-48.png" download>icon-color-48.png</a></li><li><a href="png/icon-color-512.png" download>icon-color-512.png</a></li><li><a href="png/icon-color-64.png" download>icon-color-64.png</a></li></ul></article><article class="card dl"><h3>App icons</h3><div class="dl-preview "><img src="app-icon/vampytd-app-icon-dark.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="app-icon/vampytd-app-icon-dark-fullbleed.svg" download>vampytd-app-icon-dark-fullbleed.svg</a></li><li><a href="app-icon/vampytd-app-icon-dark.svg" download>vampytd-app-icon-dark.svg</a></li><li><a href="app-icon/vampytd-app-icon-light-fullbleed.svg" download>vampytd-app-icon-light-fullbleed.svg</a></li><li><a href="app-icon/vampytd-app-icon-light.svg" download>vampytd-app-icon-light.svg</a></li><li><a href="app-icon/vampytd-app-icon-maskable.svg" download>vampytd-app-icon-maskable.svg</a></li><li><a href="app-icon/vampytd-app-icon-red.svg" download>vampytd-app-icon-red.svg</a></li><li><a href="png/app-icon-dark-1024.png" download>app-icon-dark-1024.png</a></li><li><a href="png/app-icon-dark-180.png" download>app-icon-dark-180.png</a></li><li><a href="png/app-icon-dark-512.png" download>app-icon-dark-512.png</a></li><li><a href="png/app-icon-light-1024.png" download>app-icon-light-1024.png</a></li><li><a href="png/app-icon-light-180.png" download>app-icon-light-180.png</a></li><li><a href="png/app-icon-light-512.png" download>app-icon-light-512.png</a></li><li><a href="png/app-icon-red-1024.png" download>app-icon-red-1024.png</a></li><li><a href="png/app-icon-red-180.png" download>app-icon-red-180.png</a></li><li><a href="png/app-icon-red-512.png" download>app-icon-red-512.png</a></li></ul></article><article class="card dl"><h3>Favicons &amp; PWA</h3><div class="dl-preview "><img src="favicon/favicon.svg" alt="" loading="lazy"></div><ul class="files"><li><a href="favicon/android-chrome-192.png" download>android-chrome-192.png</a></li><li><a href="favicon/android-chrome-512.png" download>android-chrome-512.png</a></li><li><a href="favicon/apple-touch-icon.png" download>apple-touch-icon.png</a></li><li><a href="favicon/favicon-16.png" download>favicon-16.png</a></li><li><a href="favicon/favicon-32.png" download>favicon-32.png</a></li><li><a href="favicon/favicon-48.png" download>favicon-48.png</a></li><li><a href="favicon/favicon.ico" download>favicon.ico</a></li><li><a href="favicon/favicon.svg" download>favicon.svg</a></li><li><a href="favicon/maskable-512.png" download>maskable-512.png</a></li><li><a href="favicon/site.webmanifest" download>site.webmanifest</a></li></ul></article><article class="card dl"><h3>Social</h3><div class="dl-preview "><img src="social/og-image-light.png" alt="" loading="lazy"></div><ul class="files"><li><a href="social/avatar-dark-800.png" download>avatar-dark-800.png</a></li><li><a href="social/avatar-light-800.png" download>avatar-light-800.png</a></li><li><a href="social/avatar-red-800.png" download>avatar-red-800.png</a></li><li><a href="social/og-image-dark.png" download>og-image-dark.png</a></li><li><a href="social/og-image-light.png" download>og-image-light.png</a></li><li><a href="social/twitter-header-dark.png" download>twitter-header-dark.png</a></li><li><a href="social/twitter-header-light.png" download>twitter-header-light.png</a></li><li><a href="social/youtube-banner-dark.png" download>youtube-banner-dark.png</a></li><li><a href="social/youtube-banner-light.png" download>youtube-banner-light.png</a></li></ul></article><article class="card dl"><h3>Tokens</h3><ul class="files"><li><a href="tokens/colors.css" download>colors.css</a></li><li><a href="tokens/tailwind.colors.js" download>tailwind.colors.js</a></li><li><a href="tokens/tokens.json" download>tokens.json</a></li></ul></article>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>© VampYTD · Brand guidelines v1.0</p>
+    <p>Inter © The Inter Project Authors, licensed under the SIL Open Font License 1.1.</p>
+  </div>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  const toast = document.getElementById('toast');
+  let t;
+  const say = (msg) => {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(t);
+    t = setTimeout(() => toast.classList.remove('show'), 1600);
+  };
+  document.querySelectorAll('button.copy').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const v = btn.dataset.copy;
+      try {
+        await navigator.clipboard.writeText(v);
+        say(`Copied ${v}`);
+      } catch {
+        say(`Select and copy ${v}`);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

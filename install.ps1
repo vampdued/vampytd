@@ -94,6 +94,13 @@ if (Test-Path $SourceExtDir) {
     Write-Host "  Copied extension to: $InstalledExtDir" -ForegroundColor Green
 }
 
+# 2c. Deploy brand assets (icons) for notifications and shortcuts
+$SourceAssetsDir = Join-Path $PSScriptRoot "assets"
+if (Test-Path $SourceAssetsDir) {
+    Copy-Item -Path (Join-Path $SourceAssetsDir "*") -Destination $InstallDir -Force
+    Write-Host "  Copied brand assets to: $InstallDir" -ForegroundColor Green
+}
+
 # 3. Write Chrome Native Messaging Manifest
 $ManifestContent = @{
     name = $HostName

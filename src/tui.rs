@@ -44,9 +44,11 @@ use crate::downloader::{self, Format, PlaylistMeta, VideoMeta};
 
 
 
-const YT_RED: Color = Color::Rgb(255, 0, 0);
-
-const YT_SURFACE: Color = Color::Rgb(24, 24, 24);
+const VAMP_RED: Color = Color::Rgb(255, 10, 33);
+const VAMP_INK: Color = Color::Rgb(14, 14, 18);
+const VAMP_GRAPHITE: Color = Color::Rgb(28, 28, 34);
+const VAMP_SLATE: Color = Color::Rgb(98, 98, 110);
+const VAMP_MIST: Color = Color::Rgb(244, 244, 246);
 
 
 
@@ -304,7 +306,7 @@ fn tui_loop(
 
                     .borders(Borders::ALL)
 
-                    .border_style(Style::default().fg(YT_RED)),
+                    .border_style(Style::default().fg(VAMP_RED)),
 
             );
 
@@ -316,11 +318,11 @@ fn tui_loop(
 
             let search_border = if is_searching {
 
-                Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)
+                Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)
 
             } else {
 
-                Style::default().fg(Color::DarkGray)
+                Style::default().fg(VAMP_SLATE)
 
             };
 
@@ -374,7 +376,7 @@ fn tui_loop(
 
             let header_row = Row::new(vec![
 
-                Span::styled(" SEL", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled(" SEL", Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
 
                 Span::styled("TYPE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
 
@@ -412,7 +414,7 @@ fn tui_loop(
 
                     let tag_cell = if is_tagged { "[x]" } else { "[ ]" };
 
-                    let tag_color = if is_tagged { YT_RED } else { Color::DarkGray };
+                    let tag_color = if is_tagged { VAMP_RED } else { VAMP_SLATE };
 
 
 
@@ -590,7 +592,7 @@ fn tui_loop(
 
                     .title(" Available Streams (Ranked by Quality) ")
 
-                    .border_style(Style::default().fg(Color::DarkGray)),
+                    .border_style(Style::default().fg(VAMP_SLATE)),
 
             )
 
@@ -598,9 +600,9 @@ fn tui_loop(
 
                 Style::default()
 
-                    .bg(YT_SURFACE)
+                    .bg(VAMP_GRAPHITE)
 
-                    .fg(Color::White)
+                    .fg(VAMP_MIST)
 
                     .add_modifier(Modifier::BOLD),
 
@@ -620,7 +622,7 @@ fn tui_loop(
 
             let summary = Line::from(vec![
 
-                Span::styled(format!(" Tagged: {} ", tagged_count), Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled(format!(" Tagged: {} ", tagged_count), Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
 
                 Span::styled("| [Space]", Style::default().fg(Color::Yellow)),
 
@@ -1094,7 +1096,7 @@ fn playlist_tui_loop(
 
             let header = Paragraph::new(Line::from(vec![
 
-                Span::styled(">>", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled(">>", Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
 
                 Span::styled(header_text, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
 
@@ -1106,9 +1108,9 @@ fn playlist_tui_loop(
 
                     .borders(Borders::ALL)
 
-                    .border_style(Style::default().fg(YT_RED))
+                    .border_style(Style::default().fg(VAMP_RED))
 
-                    .style(Style::default().bg(YT_SURFACE)),
+                    .style(Style::default().bg(VAMP_INK)),
 
             );
 
@@ -1124,7 +1126,7 @@ fn playlist_tui_loop(
 
                     Row::new(vec![
 
-                        Span::styled(format!(" [{}]", num), Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                        Span::styled(format!(" [{}]", num), Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
 
                         Span::styled(*label, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
 
@@ -1180,7 +1182,7 @@ fn playlist_tui_loop(
 
                     .borders(Borders::ALL)
 
-                    .border_style(Style::default().fg(Color::DarkGray)),
+                    .border_style(Style::default().fg(VAMP_SLATE)),
 
             )
 
@@ -1188,9 +1190,9 @@ fn playlist_tui_loop(
 
                 Style::default()
 
-                    .bg(YT_RED)
+                    .bg(VAMP_RED)
 
-                    .fg(Color::White)
+                    .fg(VAMP_INK)
 
                     .add_modifier(Modifier::BOLD),
 
@@ -1206,7 +1208,7 @@ fn playlist_tui_loop(
 
             let footer = Paragraph::new(Line::from(vec![
 
-                Span::styled(" [1-6]", Style::default().fg(YT_RED).add_modifier(Modifier::BOLD)),
+                Span::styled(" [1-6]", Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
 
                 Span::raw(" Quick Select | "),
 

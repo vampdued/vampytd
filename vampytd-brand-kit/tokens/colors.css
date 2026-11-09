@@ -1,0 +1,41 @@
+:root {
+  /* VampYTD brand colour tokens */
+  --vamp-red: #FF0A21;
+  --vamp-red-deep: #E00019;   /* red for text on light surfaces (5.0:1 on white) */
+  --vamp-ink: #0E0E12;
+  --vamp-white: #FFFFFF;
+  --vamp-graphite: #1C1C22;
+  --vamp-slate: #62626E;
+  --vamp-mist: #F4F4F6;
+  --vamp-line: #E2E2E7;
+
+  /* Semantic tokens (light by default) */
+  --brand: var(--vamp-red);
+  --brand-text: var(--vamp-red-deep);
+  --surface: var(--vamp-white);
+  --surface-raised: var(--vamp-mist);
+  --text: var(--vamp-ink);
+  --text-muted: var(--vamp-slate);
+  --border: var(--vamp-line);
+
+  /* Fallback for browsers without light-dark() */
+  @media (prefers-color-scheme: dark) {
+    --brand-text: var(--vamp-red);
+    --surface: var(--vamp-ink);
+    --surface-raised: var(--vamp-graphite);
+    --text: var(--vamp-white);
+    --text-muted: #A4A4B0;
+    --border: #2A2A32;
+  }
+
+  @supports (color: light-dark(white, black)) {
+    --brand-text: light-dark(var(--vamp-red-deep), var(--vamp-red));
+    --surface: light-dark(var(--vamp-white), var(--vamp-ink));
+    --surface-raised: light-dark(var(--vamp-mist), var(--vamp-graphite));
+    --text: light-dark(var(--vamp-ink), var(--vamp-white));
+    --text-muted: light-dark(var(--vamp-slate), #A4A4B0);
+    --border: light-dark(var(--vamp-line), #2A2A32);
+  }
+
+  color-scheme: light dark;
+}

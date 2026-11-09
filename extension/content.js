@@ -559,22 +559,22 @@ function showFloatingToast(ok, text) {
     const isCinematic = text && text.toLowerCase().includes('cinematic');
 
     // Theme-calibrated surfaces matching YouTube & VampYTD design tokens
-    const bg = isDark ? 'rgba(24, 24, 24, 0.95)' : 'rgba(255, 255, 255, 0.96)';
-    const color = isDark ? '#f1f1f1' : '#0f172a';
-    const border = isDark ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.1)';
+    const bg = isDark ? 'rgba(14, 14, 18, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+    const color = isDark ? '#ffffff' : '#0E0E12';
+    const border = isDark ? '1px solid #2a2a34' : '1px solid #E2E2E7';
     const shadow = isDark
-        ? '0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3)'
+        ? '0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4)'
         : '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)';
 
     let iconSvg = '';
     if (isCinematic) {
-        const iconColor = isDark ? '#ff0000' : '#cc0000';
+        const iconColor = '#FF0A21';
         iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="${iconColor}"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H5V6h14v12zM6 8h12v2H6zm0 6h12v2H6z"/></svg>`;
     } else if (ok) {
         const iconColor = isDark ? '#34d399' : '#059669';
         iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     } else {
-        const iconColor = isDark ? '#f87171' : '#dc2626';
+        const iconColor = '#FF0A21';
         iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
     }
 
