@@ -44,40 +44,28 @@ pub struct PlaylistMeta {
     pub entries: Option<Vec<PlaylistEntry>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Format {
     pub format_id: String,
-
     pub ext: String,
-
     pub resolution: Option<String>,
-
     pub width: Option<u32>,
-
     pub height: Option<u32>,
-
     pub fps: Option<f64>,
-
     pub vcodec: Option<String>,
-
     pub acodec: Option<String>,
-
     pub filesize: Option<u64>,
-
     pub filesize_approx: Option<u64>,
-
     pub tbr: Option<f64>,
-
     pub vbr: Option<f64>,
-
     pub abr: Option<f64>,
-
+    pub asr: Option<f64>,
+    pub audio_channels: Option<u32>,
+    pub protocol: Option<String>,
     pub format_note: Option<String>,
-
     pub dynamic_range: Option<String>,
-
     pub language: Option<String>,
+    pub quality_label: Option<String>,
 }
 
 impl Format {
@@ -86,23 +74,76 @@ impl Format {
     }
 
     pub fn is_audio_only(&self) -> bool {
-        !self.is_video() && self.acodec.as_deref().unwrap_or("none") != "none"
+        if self.is_video() {
+            return false;
+        }
+        self.acodec.as_deref().unwrap_or("none") != "none"
+            || matches!(self.ext.as_str(), "m4a" | "aac" | "opus" | "mp3" | "ogg" | "flac" | "wav")
+            || self.abr.is_some()
+            || self.asr.is_some()
+            || self.audio_channels.is_some()
+            || self.resolution.as_deref() == Some("audio only")
+    }
+
+    pub fn calculate_estimated_size(&self, duration_sec: f64) -> Option<u64> {
+        if duration_sec <= 0.0 || duration_sec.is_nan() || duration_sec.is_infinite() {
+            return None;
+        }
+
+        let rate_kbps = if self.is_audio_only() {
+            self.abr.or(self.tbr)
+        } else if self.is_muxed() {
+            self.tbr.or_else(|| {
+                match (self.vbr, self.abr) {
+                    (Some(v), Some(a)) => Some(v + a),
+                    (Some(v), None) => Some(v),
+                    (None, Some(a)) => Some(a),
+                    _ => None,
+                }
+            })
+        } else {
+            self.vbr.or(self.tbr)
+        };
+
+        if let Some(kbps) = rate_kbps {
+            if kbps > 0.0 && !kbps.is_nan() && !kbps.is_infinite() {
+                let bytes = kbps * 125.0 * duration_sec;
+                if bytes > 0.0 && bytes < (u64::MAX as f64) {
+                    return Some(bytes.round() as u64);
+                }
+            }
+        }
+        None
+    }
+
+    pub fn is_size_estimated(&self) -> bool {
+        self.filesize.is_none() && self.filesize_approx.is_some()
     }
 
     pub fn size_string(&self) -> String {
-        let bytes = self.filesize.or(self.filesize_approx).unwrap_or(0);
-
-        if bytes == 0 {
-            return "?".to_string();
+        if let Some(bytes) = self.filesize {
+            if bytes > 0 {
+                let mb = (bytes as f64) / (1024.0 * 1024.0);
+                return if mb >= 1024.0 {
+                    format!("{:.1} GB", mb / 1024.0)
+                } else {
+                    format!("{:.1} MB", mb)
+                };
+            }
         }
 
-        let mb = (bytes as f64) / (1024.0 * 1024.0);
-
-        if mb >= 1024.0 {
-            format!("{:.1} GB", mb / 1024.0)
-        } else {
-            format!("{:.1} MB", mb)
+        if let Some(bytes) = self.filesize_approx {
+            if bytes > 0 {
+                let mb = (bytes as f64) / (1024.0 * 1024.0);
+                return if mb >= 1024.0 {
+                    format!("~{:.1} GB", mb / 1024.0)
+                } else {
+                    format!("~{:.1} MB", mb)
+                };
+            }
         }
+
+        "-".to_string()
     }
 
     pub fn bitrate_clean(&self) -> String {
@@ -130,18 +171,23 @@ impl Format {
             return true;
         }
 
-        let v = self.vcodec.as_deref().unwrap_or("none");
+        if let Some(ref note) = self.format_note {
+            let lower = note.to_lowercase();
+            if lower.contains("storyboard") {
+                return true;
+            }
+        }
 
+        let v = self.vcodec.as_deref().unwrap_or("none");
         let a = self.acodec.as_deref().unwrap_or("none");
 
         if v == "none" && a == "none" {
-            return true;
-        }
-
-        if let Some(ref note) = self.format_note {
-            let lower = note.to_lowercase();
-
-            if lower.contains("storyboard") {
+            let is_known_audio = matches!(self.ext.as_str(), "m4a" | "aac" | "opus" | "mp3" | "ogg" | "flac" | "wav")
+                || self.abr.is_some()
+                || self.asr.is_some()
+                || self.audio_channels.is_some()
+                || self.resolution.as_deref() == Some("audio only");
+            if !is_known_audio {
                 return true;
             }
         }
@@ -231,19 +277,50 @@ impl Format {
         false
     }
 
+    pub fn is_premium(&self) -> bool {
+        if self.format_id == "616" || self.format_id == "356" {
+            return true;
+        }
+        if let Some(ref note) = self.format_note {
+            if note.to_lowercase().contains("premium") {
+                return true;
+            }
+        }
+        if let Some(ref ql) = self.quality_label {
+            if ql.to_lowercase().contains("premium") {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn proto_clean(&self) -> &'static str {
+        let p = self.protocol.as_deref().unwrap_or("").to_lowercase();
+        if p.contains("m3u8") {
+            "m3u8"
+        } else if p.contains("dash") {
+            "dash"
+        } else if p.contains("http") {
+            "https"
+        } else {
+            "-"
+        }
+    }
+
     pub fn res_clean(&self) -> String {
         let base = if let Some(h) = self.height {
             match h {
                 4320.. => format!("8K {}p", h),
-
                 2160.. => format!("4K {}p", h),
-
                 1440.. => format!("2K {}p", h),
-
-                1080 => "1080p FHD".to_string(),
-
+                1080 => {
+                    if self.is_premium() {
+                        "1080p [PREM]".to_string()
+                    } else {
+                        "1080p FHD".to_string()
+                    }
+                }
                 720 => "720p HD".to_string(),
-
                 _ => format!("{}p", h),
             }
         } else if self.is_audio_only() {
@@ -261,27 +338,62 @@ impl Format {
         }
     }
 
-    pub fn acodec_with_lang(&self) -> String {
-        let codec = self.acodec_clean();
+    pub fn acodec_with_details(&self) -> String {
+        let mut base = self.acodec_clean().to_string();
 
-        if codec == "-" {
-            return "-".to_string();
+        if base == "-" {
+            if self.is_audio_only() {
+                base = "Audio".to_string();
+            } else {
+                return "-".to_string();
+            }
+        }
+
+        if let Some(asr) = self.asr {
+            let khz = (asr / 1000.0).round() as u32;
+            if khz > 0 {
+                base = format!("{} {}k", base, khz);
+            }
+        }
+
+        if let Some(ch) = self.audio_channels {
+            if ch == 6 {
+                base = format!("{} 5.1", base);
+            } else if ch == 8 {
+                base = format!("{} 7.1", base);
+            } else if ch == 1 {
+                base = format!("{} 1ch", base);
+            }
         }
 
         if let Some(ref lang) = self.language {
             let l = lang.trim();
-
             if !l.is_empty() && l != "und" {
-                return format!("{} [{}]", codec, l);
+                base = format!("{} [{}]", base, l);
             }
         }
 
-        codec.to_string()
+        base
+    }
+
+    pub fn acodec_with_lang(&self) -> String {
+        self.acodec_with_details()
+    }
+
+    pub fn effective_bitrate(&self) -> f64 {
+        let raw = self.vbr.or(self.tbr).unwrap_or(0.0);
+        let factor = match self.vcodec_clean() {
+            "AV1" => 2.0,
+            "VP9" => 1.45,
+            "HEVC" => 1.45,
+            "H.264" => 1.0,
+            _ => 1.0,
+        };
+        raw * factor
     }
 
     pub fn vcodec_rank(&self) -> u8 {
         let v = self.vcodec.as_deref().unwrap_or("none").to_lowercase();
-
         if v.starts_with("av01") {
             1
         } else if v.starts_with("vp9") || v.starts_with("vp09") {
@@ -301,7 +413,6 @@ impl Format {
 
     pub fn acodec_rank(&self) -> u8 {
         let a = self.acodec.as_deref().unwrap_or("none").to_lowercase();
-
         if a.contains("opus") {
             1
         } else if a.contains("aac") || a.contains("mp4a") {
@@ -323,57 +434,69 @@ pub fn sort_and_filter_formats(formats: &[Format]) -> Vec<Format> {
 
     valid.sort_by(|a, b| {
         // Audio-only at the bottom
-
         if a.is_audio_only() != b.is_audio_only() {
             return a.is_audio_only().cmp(&b.is_audio_only());
         }
 
         if a.is_audio_only() && b.is_audio_only() {
             // Audio quality ranking (Opus > AAC > MP3)
-
             if a.acodec_rank() != b.acodec_rank() {
                 return a.acodec_rank().cmp(&b.acodec_rank());
             }
 
+            // Audio channel count (5.1 > stereo)
+            let a_ch = a.audio_channels.unwrap_or(2);
+            let b_ch = b.audio_channels.unwrap_or(2);
+            if a_ch != b_ch {
+                return b_ch.cmp(&a_ch);
+            }
+
+            // Audio bitrate descending
+            let a_abr = a.abr.or(a.tbr).unwrap_or(0.0) as u64;
+            let b_abr = b.abr.or(b.tbr).unwrap_or(0.0) as u64;
+            if a_abr != b_abr {
+                return b_abr.cmp(&a_abr);
+            }
+
             let a_size = a.filesize.or(a.filesize_approx).unwrap_or(0);
-
             let b_size = b.filesize.or(b.filesize_approx).unwrap_or(0);
-
             return b_size.cmp(&a_size);
         }
 
         // Video streams: Height descending (8K -> 4K -> 1440p -> 1080p -> ...)
-
         let a_h = a.height.unwrap_or(0);
-
         let b_h = b.height.unwrap_or(0);
-
         if a_h != b_h {
             return b_h.cmp(&a_h);
         }
 
+        // Within the same height: Premium streams rank above standard streams
+        if a.is_premium() != b.is_premium() {
+            return b.is_premium().cmp(&a.is_premium());
+        }
+
+        // Effective bitrate descending (taking codec efficiency into account)
+        let a_eff = a.effective_bitrate() as u64;
+        let b_eff = b.effective_bitrate() as u64;
+        if a_eff != b_eff {
+            return b_eff.cmp(&a_eff);
+        }
+
         // FPS descending (60fps > 30fps)
-
         let a_fps = a.fps.map(|f| f.round() as u32).unwrap_or(0);
-
         let b_fps = b.fps.map(|f| f.round() as u32).unwrap_or(0);
-
         if a_fps != b_fps {
             return b_fps.cmp(&a_fps);
         }
 
         // Codec rank (AV1 > VP9 > HEVC > H264)
-
         if a.vcodec_rank() != b.vcodec_rank() {
             return a.vcodec_rank().cmp(&b.vcodec_rank());
         }
 
         // Filesize / bitrate descending
-
         let a_size = a.filesize.or(a.filesize_approx).unwrap_or(0);
-
         let b_size = b.filesize.or(b.filesize_approx).unwrap_or(0);
-
         b_size.cmp(&a_size)
     });
 
@@ -571,8 +694,21 @@ pub fn fetch_metadata(
         anyhow::bail!("yt-dlp metadata dump failed: {}", err);
     }
 
-    let meta: VideoMeta =
+    let mut meta: VideoMeta =
         serde_json::from_slice(&output.stdout).context("Failed to parse yt-dlp JSON output")?;
+
+    // Thread duration to populate estimated filesize for streams missing filesize and filesize_approx
+    if let Some(dur) = meta.duration {
+        if dur > 0.0 {
+            if let Some(ref mut formats) = meta.formats {
+                for f in formats.iter_mut() {
+                    if f.filesize.is_none() && f.filesize_approx.is_none() {
+                        f.filesize_approx = f.calculate_estimated_size(dur);
+                    }
+                }
+            }
+        }
+    }
 
     Ok(meta)
 }
@@ -784,185 +920,85 @@ mod tests {
     use super::*;
 
     #[test]
-
     fn test_bitrate_clean_numeric() {
         let mut fmt = Format {
             format_id: "137".to_string(),
-
             ext: "mp4".to_string(),
-
             resolution: Some("1920x1080".to_string()),
-
             width: Some(1920),
-
             height: Some(1080),
-
             fps: Some(60.0),
-
             vcodec: Some("avc1.640028".to_string()),
-
-            acodec: None,
-
             filesize: Some(100_000_000),
-
-            filesize_approx: None,
-
             tbr: Some(2540.0),
-
             vbr: Some(2539.6),
-
-            abr: None,
-
-            format_note: None,
-
-            dynamic_range: None,
-
-            language: None,
+            ..Default::default()
         };
 
         // Video stream prefers vbr -> "2540k"
-
         assert_eq!(fmt.bitrate_clean(), "2540k");
 
         // Audio stream prefers abr -> "128k"
-
         let audio_fmt = Format {
             format_id: "251".to_string(),
-
             ext: "webm".to_string(),
-
-            resolution: None,
-
-            width: None,
-
-            height: None,
-
-            fps: None,
-
-            vcodec: None,
-
             acodec: Some("opus".to_string()),
-
             filesize: Some(5_000_000),
-
-            filesize_approx: None,
-
             tbr: Some(135.0),
-
-            vbr: None,
-
             abr: Some(128.0),
-
-            format_note: None,
-
-            dynamic_range: None,
-
-            language: None,
+            ..Default::default()
         };
 
         assert_eq!(audio_fmt.bitrate_clean(), "128k");
 
         // Missing bitrate defaults to "-"
-
         fmt.vbr = None;
-
         fmt.tbr = None;
-
         assert_eq!(fmt.bitrate_clean(), "-");
     }
 
     #[test]
-
     fn test_hdr_and_language_detection() {
         let hdr_fmt = Format {
             format_id: "313".to_string(),
-
             ext: "webm".to_string(),
-
             resolution: Some("3840x2160".to_string()),
-
             width: Some(3840),
-
             height: Some(2160),
-
             fps: Some(60.0),
-
             vcodec: Some("vp9.2".to_string()),
-
-            acodec: None,
-
-            filesize: None,
-
-            filesize_approx: None,
-
             tbr: Some(18000.0),
-
             vbr: Some(18000.0),
-
-            abr: None,
-
             format_note: Some("2160p60 HDR".to_string()),
-
             dynamic_range: Some("HDR10".to_string()),
-
-            language: None,
+            ..Default::default()
         };
 
         assert!(hdr_fmt.is_hdr());
-
         assert_eq!(hdr_fmt.res_clean(), "4K 2160p HDR");
 
         let audio_lang_fmt = Format {
             format_id: "251".to_string(),
-
             ext: "webm".to_string(),
-
-            resolution: None,
-
-            width: None,
-
-            height: None,
-
-            fps: None,
-
-            vcodec: None,
-
             acodec: Some("opus".to_string()),
-
-            filesize: None,
-
-            filesize_approx: None,
-
             tbr: Some(128.0),
-
-            vbr: None,
-
             abr: Some(128.0),
-
             format_note: Some("original".to_string()),
-
-            dynamic_range: None,
-
             language: Some("en".to_string()),
+            ..Default::default()
         };
 
         assert!(!audio_lang_fmt.is_hdr());
-
         assert_eq!(audio_lang_fmt.acodec_with_lang(), "Opus [en]");
     }
 
     #[test]
-
     fn test_serde_format_json_with_bitrates() {
         let json_data = "{\"format_id\":\"137\",\"ext\":\"mp4\",\"resolution\":\"1920x1080\",\"width\":1920,\"height\":1080,\"fps\":60,\"vcodec\":\"avc1.640028\",\"acodec\":\"none\",\"vbr\":4200.5,\"abr\":null,\"tbr\":4200.5}";
-
         let fmt: Format =
             serde_json::from_str(json_data).expect("Failed to deserialize Format JSON");
-
         assert_eq!(fmt.vbr, Some(4200.5));
-
         assert_eq!(fmt.abr, None);
-
         assert_eq!(fmt.bitrate_clean(), "4201k");
     }
 
@@ -976,15 +1012,9 @@ mod tests {
             height: Some(360),
             fps: Some(24.0),
             vcodec: Some("vp09.00.20.08".to_string()),
-            acodec: None,
             vbr: Some(589.0),
-            abr: None,
             tbr: Some(589.0),
-            filesize: None,
-            filesize_approx: None,
-            format_note: None,
-            dynamic_range: None,
-            language: None,
+            ..Default::default()
         };
 
         let muxed = Format {
@@ -996,33 +1026,22 @@ mod tests {
             fps: Some(24.0),
             vcodec: Some("avc1.42001E".to_string()),
             acodec: Some("mp4a.40.2".to_string()),
-            vbr: None,
             abr: Some(96.0),
             tbr: Some(714.0),
             filesize: Some(14500000),
-            filesize_approx: None,
-            format_note: None,
-            dynamic_range: None,
             language: Some("hi".to_string()),
+            ..Default::default()
         };
 
         let audio_only = Format {
             format_id: "251".to_string(),
             ext: "webm".to_string(),
-            resolution: None,
-            width: None,
-            height: None,
-            fps: None,
-            vcodec: None,
             acodec: Some("opus".to_string()),
-            vbr: None,
             abr: Some(131.0),
             tbr: Some(131.0),
             filesize: Some(2621440),
-            filesize_approx: None,
-            format_note: None,
-            dynamic_range: None,
             language: Some("hi".to_string()),
+            ..Default::default()
         };
 
         // Formats list with muxed (#18) before audio_only (#251)
@@ -1031,5 +1050,145 @@ mod tests {
         let best = find_best_audio(&formats).expect("Should find an audio stream");
         assert_eq!(best.format_id, "251");
         assert_eq!(best.acodec_with_lang(), "Opus [hi]");
+    }
+
+    #[test]
+    fn test_calculate_estimated_size() {
+        let mut fmt = Format {
+            format_id: "616".to_string(),
+            ext: "mp4".to_string(),
+            height: Some(1080),
+            vcodec: Some("vp09.00.40.08".to_string()),
+            tbr: Some(4362.0),
+            format_note: Some("Premium".to_string()),
+            ..Default::default()
+        };
+
+        assert!(fmt.is_premium());
+        assert_eq!(fmt.size_string(), "-");
+        assert!(!fmt.is_size_estimated());
+
+        // Duration of 198.0s at 4362 kbps -> ~108 MB
+        let est = fmt.calculate_estimated_size(198.0);
+        assert!(est.is_some());
+        fmt.filesize_approx = est;
+
+        assert!(fmt.is_size_estimated());
+        assert!(fmt.size_string().starts_with("~"));
+        assert!(fmt.size_string().ends_with("MB"));
+    }
+
+    #[test]
+    fn test_hls_audio_preserved() {
+        let hls_audio = Format {
+            format_id: "234".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("audio only".to_string()),
+            vcodec: Some("none".to_string()),
+            acodec: Some("none".to_string()),
+            protocol: Some("m3u8_native".to_string()),
+            format_note: Some("Default, high".to_string()),
+            ..Default::default()
+        };
+
+        assert!(!hls_audio.is_storyboard());
+        assert!(hls_audio.is_audio_only());
+        assert_eq!(hls_audio.stream_type_badge(), "AUD");
+        assert_eq!(hls_audio.proto_clean(), "m3u8");
+    }
+
+    #[test]
+    fn test_smart_ranking_prioritizes_premium() {
+        let premium = Format {
+            format_id: "616".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("1920x1080".to_string()),
+            height: Some(1080),
+            fps: Some(24.0),
+            vcodec: Some("vp09.00.40.08".to_string()),
+            tbr: Some(4362.0),
+            format_note: Some("Premium".to_string()),
+            ..Default::default()
+        };
+
+        let av1_1080 = Format {
+            format_id: "399".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("1920x1080".to_string()),
+            height: Some(1080),
+            fps: Some(24.0),
+            vcodec: Some("av01.0.08M.08".to_string()),
+            tbr: Some(1571.0),
+            filesize: Some(38_890_000),
+            ..Default::default()
+        };
+
+        let h264_1080 = Format {
+            format_id: "137".to_string(),
+            ext: "mp4".to_string(),
+            resolution: Some("1920x1080".to_string()),
+            height: Some(1080),
+            fps: Some(24.0),
+            vcodec: Some("avc1.640028".to_string()),
+            tbr: Some(2564.0),
+            filesize: Some(63_460_000),
+            ..Default::default()
+        };
+
+        let raw = vec![h264_1080, av1_1080, premium];
+        let sorted = sort_and_filter_formats(&raw);
+
+        // Format 616 must be ranked first among 1080p
+        assert_eq!(sorted[0].format_id, "616");
+        assert!(sorted[0].res_clean().contains("[PREM]"));
+    }
+
+    #[test]
+    fn test_acodec_with_details() {
+        let fmt = Format {
+            format_id: "251".to_string(),
+            ext: "webm".to_string(),
+            acodec: Some("opus".to_string()),
+            asr: Some(48000.0),
+            audio_channels: Some(2),
+            language: Some("hi".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(fmt.acodec_with_details(), "Opus 48k [hi]");
+
+        let fmt_surround = Format {
+            format_id: "328".to_string(),
+            ext: "mp4".to_string(),
+            acodec: Some("mp4a.40.2".to_string()),
+            asr: Some(48000.0),
+            audio_channels: Some(6),
+            language: Some("en".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(fmt_surround.acodec_with_details(), "AAC 48k 5.1 [en]");
+    }
+
+    #[test]
+    fn test_proto_clean() {
+        let f_m3u8 = Format {
+            format_id: "1".to_string(),
+            protocol: Some("m3u8_native".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(f_m3u8.proto_clean(), "m3u8");
+
+        let f_dash = Format {
+            format_id: "2".to_string(),
+            protocol: Some("http_dash_segments".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(f_dash.proto_clean(), "dash");
+
+        let f_https = Format {
+            format_id: "3".to_string(),
+            protocol: Some("https".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(f_https.proto_clean(), "https");
     }
 }

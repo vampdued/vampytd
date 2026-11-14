@@ -203,25 +203,17 @@ fn tui_loop(
             for &idx in &base_indices {
 
                 let fmt = &formats[idx];
-
                 let hay = format!(
-
-                    "{} {} {} {} {} {} {}",
-
+                    "{} {} {} {} {} {} {} {} {}",
                     fmt.format_id,
-
                     fmt.res_clean(),
-
                     fmt.vcodec_clean(),
-
-                    fmt.acodec_clean(),
-
+                    fmt.acodec_with_details(),
                     fmt.fps_clean(),
-
                     fmt.bitrate_clean(),
-
+                    fmt.proto_clean(),
+                    fmt.size_string(),
                     fmt.ext
-
                 );
 
                 let mut buf = Vec::new();
@@ -373,31 +365,19 @@ fn tui_loop(
 
 
             // 3. Table Rows
-
             let header_row = Row::new(vec![
-
                 Span::styled(" SEL", Style::default().fg(VAMP_RED).add_modifier(Modifier::BOLD)),
-
                 Span::styled("TYPE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("ID", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("RESOLUTION", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("VCODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("ACODEC", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("FPS", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("BITRATE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                 Span::styled("SIZE", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
+                Span::styled("PROTO", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
                 Span::styled("EXT", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
             ])
-
             .bottom_margin(1);
 
 
@@ -430,156 +410,102 @@ fn tui_loop(
 
 
 
-                    let res_style = if fmt.is_audio_only() {
-
+                    let res_style = if fmt.is_premium() {
+                        Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD)
+                    } else if fmt.is_audio_only() {
                         Style::default().fg(Color::Magenta)
-
                     } else if fmt.is_hdr() {
-
                         Style::default().fg(Color::Rgb(255, 175, 0)).add_modifier(Modifier::BOLD)
-
                     } else if fmt.height.unwrap_or(0) >= 2160 {
-
                         Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD)
-
                     } else if fmt.height.unwrap_or(0) >= 1080 {
-
                         Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
-
                     } else {
-
                         Style::default().fg(Color::White)
-
                     };
-
-
 
                     let vcodec_clean = fmt.vcodec_clean();
-
                     let vcodec_style = match vcodec_clean {
-
                         "AV1" => Style::default().fg(Color::LightGreen),
-
                         "VP9" => Style::default().fg(Color::LightCyan),
-
                         "HEVC" => Style::default().fg(Color::Yellow),
-
                         "H.264" => Style::default().fg(Color::White),
-
                         _ => Style::default().fg(Color::DarkGray),
-
                     };
-
-
 
                     let acodec_clean = fmt.acodec_clean();
-
                     let acodec_style = match acodec_clean {
-
                         "Opus" => Style::default().fg(Color::LightGreen),
-
                         "AAC" => Style::default().fg(Color::LightCyan),
-
                         "MP3" => Style::default().fg(Color::LightYellow),
-
                         _ => Style::default().fg(Color::DarkGray),
-
                     };
-
-
 
                     let fps_str = fmt.fps_clean();
-
                     let fps_style = if fps_str == "60" {
-
                         Style::default().fg(Color::LightGreen)
-
                     } else {
-
                         Style::default().fg(Color::DarkGray)
-
                     };
-
-
 
                     let bitrate_str = fmt.bitrate_clean();
-
                     let bitrate_style = if fmt.is_audio_only() {
-
                         Style::default().fg(Color::LightYellow)
-
                     } else if bitrate_str != "-" {
-
                         Style::default().fg(Color::LightCyan)
-
                     } else {
-
                         Style::default().fg(Color::DarkGray)
-
                     };
 
+                    let size_str = fmt.size_string();
+                    let size_style = if fmt.is_size_estimated() {
+                        Style::default().fg(Color::LightCyan)
+                    } else if size_str == "-" {
+                        Style::default().fg(Color::DarkGray)
+                    } else {
+                        Style::default().fg(Color::LightGreen)
+                    };
 
+                    let proto_str = fmt.proto_clean();
+                    let proto_style = match proto_str {
+                        "m3u8" => Style::default().fg(Color::Yellow),
+                        "dash" => Style::default().fg(Color::LightCyan),
+                        "https" => Style::default().fg(VAMP_SLATE),
+                        _ => Style::default().fg(Color::DarkGray),
+                    };
 
                     let cells = vec![
-
                         Span::styled(format!(" {}", tag_cell), Style::default().fg(tag_color).add_modifier(Modifier::BOLD)),
-
                         Span::styled(fmt.stream_type_badge(), type_style),
-
                         Span::styled(&fmt.format_id, Style::default().fg(Color::White)),
-
                         Span::styled(fmt.res_clean(), res_style),
-
                         Span::styled(vcodec_clean, vcodec_style),
-
-                        Span::styled(fmt.acodec_with_lang(), acodec_style),
-
+                        Span::styled(fmt.acodec_with_details(), acodec_style),
                         Span::styled(fps_str, fps_style),
-
                         Span::styled(bitrate_str, bitrate_style),
-
-                        Span::styled(fmt.size_string(), Style::default().fg(Color::LightGreen)),
-
+                        Span::styled(size_str, size_style),
+                        Span::styled(proto_str, proto_style),
                         Span::styled(&fmt.ext, Style::default().fg(Color::DarkGray)),
-
                     ];
-
                     Row::new(cells)
-
                 })
-
                 .collect();
 
-
-
             let table = Table::new(
-
                 rows,
-
                 [
-
                     Constraint::Length(5),  // SEL
-
-                    Constraint::Length(6),  // TYPE
-
-                    Constraint::Length(8),  // ID
-
-                    Constraint::Length(18), // RESOLUTION
-
-                    Constraint::Length(9),  // VCODEC
-
-                    Constraint::Length(11), // ACODEC
-
-                    Constraint::Length(6),  // FPS
-
+                    Constraint::Length(5),  // TYPE
+                    Constraint::Length(6),  // ID
+                    Constraint::Length(16), // RESOLUTION
+                    Constraint::Length(8),  // VCODEC
+                    Constraint::Length(16), // ACODEC
+                    Constraint::Length(5),  // FPS
                     Constraint::Length(9),  // BITRATE
-
                     Constraint::Length(10), // SIZE
-
-                    Constraint::Length(6),  // EXT
-
+                    Constraint::Length(6),  // PROTO
+                    Constraint::Length(5),  // EXT
                 ],
-
             )
 
             .header(header_row)
@@ -702,17 +628,16 @@ fn tui_loop(
 
                     };
 
-                    Line::from(vec![
-
+                    let mut spans = vec![
                         Span::styled(" >> Selected: ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-
                         Span::styled(format!("#{} ({} {})", fmt.format_id, fmt.res_clean(), fmt.vcodec_clean()), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-
                         Span::styled(" ── 🔗 Auto-pairs with: ", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
-
                         Span::styled(audio_desc, Style::default().fg(Color::LightGreen).add_modifier(Modifier::BOLD)),
-
-                    ])
+                    ];
+                    if fmt.is_premium() {
+                        spans.push(Span::styled(" ★ Premium stream", Style::default().fg(Color::Rgb(255, 215, 0)).add_modifier(Modifier::BOLD)));
+                    }
+                    Line::from(spans)
 
                 } else if fmt.is_muxed() {
 
