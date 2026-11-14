@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.1.0-FF0A21?style=flat-square" alt="Version 2.1.0"></a>
+  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.2.0-FF0A21?style=flat-square" alt="Version 2.2.0"></a>
   <img src="https://img.shields.io/badge/rust-2021_edition-FF0A21?style=flat-square&logo=rust&logoColor=white" alt="Rust 2021">
   <img src="https://img.shields.io/badge/platform-Windows_x64-0E0E12?style=flat-square&logo=windows&logoColor=white" alt="Windows x64">
   <img src="https://img.shields.io/badge/engine-yt--dlp-FF0A21?style=flat-square&logo=youtube&logoColor=white" alt="yt-dlp Engine">
@@ -49,6 +49,11 @@ vampytd/
 - 🚀 **Unified Single Binary**: Combines both the interactive CLI downloader and the Chrome/Edge Native Messaging Bridge into one standalone `vampytd.exe`.
 - 🔍 **Embedded Fuzzy Selector (No external `fzf` required)**: Features a custom YouTube Crimson-themed TUI powered by **Ratatui** and **Nucleo-Matcher** (the multi-threaded fuzzy engine behind the Helix editor).
 - 🎨 **Dynamic Stream Inspector**:
+  - **YouTube Premium Stream Detection**: Detects format `616` (1080p Enhanced Bitrate) with `[PREM]` gold badging and top-tier ranking.
+  - **Filesize Estimation**: Calculates approximate sizes (`~XX.X MB`) for adaptive/HLS streams missing Content-Length headers.
+  - **Delivery Protocol Column (`PROTO`)**: Clear tagging for `https`, `m3u8`, and `dash` streams.
+  - **Rich Audio Diagnostics**: Detailed sampling rates and audio channels (e.g. `Opus 48k [hi]`, `AAC 48k 5.1 [en]`).
+  - **Smart Codec Ranking**: Quality sorting using efficiency multipliers (AV1 2.0x, VP9/HEVC 1.45x, H.264 1.0x).
   - Pure numeric bitrate column (`2540k`, `128k`) indexed for fuzzy searching.
   - Vibrant **`4K 2160p HDR`** badges with automatic dynamic range detection.
   - Multi-track language tagging (e.g. `Opus [en]`, `AAC [hi]`).
