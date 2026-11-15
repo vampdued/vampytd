@@ -1,9 +1,11 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 mod bridge;
 mod colorizer;
 mod config;
+mod cookies;
 mod deps;
 mod downloader;
 mod notify;
@@ -58,6 +60,31 @@ enum Commands {
     Bridge,
     /// Update yt-dlp to latest version (yt-dlp -U)
     Update,
+    /// Manage, sanitize, and verify YouTube / Hotstar cookies
+    Cookies {
+        #[command(subcommand)]
+        action: CookieCommands,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CookieCommands {
+    /// Import, sanitize, and save a cookie file (.txt)
+    Import {
+        /// Path to cookie file (.txt)
+        path: PathBuf,
+        /// Target platform: youtube (default) or hotstar
+        #[arg(short, long, default_value = "youtube")]
+        target: String,
+    },
+    /// Audit and display status of saved cookies
+    Status,
+    /// Delete / clear saved cookies
+    Clear {
+        /// Target platform: youtube (default), hotstar, or all
+        #[arg(short, long, default_value = "all")]
+        target: String,
+    },
 }
 
 fn main() -> Result<()> {
@@ -72,11 +99,96 @@ fn main() -> Result<()> {
     match cli.command {
         Some(Commands::Bridge) => return bridge::run_bridge(),
         Some(Commands::Update) => return downloader::update_ytdlp(),
+        Some(Commands::Cookies { action }) => return handle_cookies_cli(action),
         None => {}
     }
 
     // Default: CLI Downloader
     run_cli(cli)
+}
+
+fn handle_cookies_cli(action: CookieCommands) -> Result<()> {
+    match action {
+        CookieCommands::Import { path, target } => {
+            println!("\x1b[38;2;255;10;33;1m>> VampYTD Cookie Sanitizer\x1b[0m");
+            if !path.exists() {
+                anyhow::bail!("Specified cookie file not found: {}", path.display());
+            }
+
+            let content = std::fs::read_to_string(&path)?;
+            let status = cookies::import_and_save(&content, &target)?;
+
+            println!("\x1b[32;1m[✓] Saved Destination:\x1b[0m  {}", status.path.unwrap_or_default());
+            println!(
+                "\x1b[32;1m[✓] Sanitization:\x1b[0m       Kept {} valid tokens (stripped {} ad/trackers)",
+                status.sanitized_cookies,
+                status.total_cookies.saturating_sub(status.sanitized_cookies)
+            );
+            println!("\x1b[32;1m[✓] Session Status:\x1b[0m     {}", status.status_label);
+            if status.has_login_info && status.has_sid {
+                println!("\x1b[36m[✓] Core Auth:\x1b[0m         LOGIN_INFO (✓), SID (✓)");
+            }
+        }
+        CookieCommands::Status => {
+            println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
+            println!("\x1b[1;37m>> VampYTD Cookie Health Audit\x1b[0m");
+            println!("\x1b[38;2;98;98;110m--------------------------------------------------------------------------------\x1b[0m");
+
+            for target in &["youtube", "hotstar"] {
+                let status = cookies::get_cookie_status(target)?;
+                let display_name = if *target == "youtube" { "YouTube" } else { "JioHotstar" };
+
+                let badge = if status.valid {
+                    "\x1b[32;1m[✓] ACTIVE\x1b[0m"
+                } else if status.exists {
+                    "\x1b[33;1m[!] EXPIRED/INVALID\x1b[0m"
+                } else {
+                    "\x1b[38;2;98;98;110m[-] MISSING\x1b[0m"
+                };
+
+                println!("\x1b[1;37m[{}]\x1b[0m {}", display_name, badge);
+                if status.exists {
+                    println!("  Path:        {}", status.path.unwrap_or_default());
+                    println!("  Status:      {}", status.status_label);
+                    println!("  Tokens:      {} active cookies", status.total_cookies);
+                    if *target == "youtube" {
+                        let auth_info = match (status.has_login_info, status.has_sid) {
+                            (true, true) => "\x1b[32mLOGIN_INFO (✓), SID (✓)\x1b[0m",
+                            (true, false) => "\x1b[33mLOGIN_INFO (✓), SID (missing)\x1b[0m",
+                            (false, true) => "\x1b[33mLOGIN_INFO (missing), SID (✓)\x1b[0m",
+                            (false, false) => "\x1b[31mMissing Core Auth Tokens\x1b[0m",
+                        };
+                        println!("  Auth Keys:   {}", auth_info);
+                    }
+                } else {
+                    println!("  Path:        {}", status.path.unwrap_or_default());
+                    println!("  Note:        File not found (Import via 'vampytd cookies import <path>' or extension)");
+                }
+                println!();
+            }
+            println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
+        }
+        CookieCommands::Clear { target } => {
+            println!("\x1b[38;2;255;10;33;1m>> VampYTD Cookie Purge\x1b[0m");
+            if target == "all" {
+                let y = cookies::clear_cookie("youtube")?;
+                let j = cookies::clear_cookie("hotstar")?;
+                if y || j {
+                    println!("\x1b[32;1m[✓] All cookies cleared successfully.\x1b[0m");
+                } else {
+                    println!("\x1b[38;2;98;98;110m[-] No saved cookies found to delete.\x1b[0m");
+                }
+            } else {
+                let deleted = cookies::clear_cookie(&target)?;
+                if deleted {
+                    println!("\x1b[32;1m[✓] Cleared {} cookies successfully.\x1b[0m", target);
+                } else {
+                    println!("\x1b[38;2;98;98;110m[-] No cookie file found for {}.\x1b[0m", target);
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn set_terminal_title(title: &str) {

@@ -647,6 +647,68 @@
       background: var(--success-bg);
     }
 
+    /* Cookie Manager Card */
+    .cookie-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cookie-card.drag-over {
+      border-color: var(--vamp-red);
+      background: var(--surface-hover);
+    }
+    .cookie-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .cookie-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cookie-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .cookie-btn:hover {
+      border-color: var(--vamp-red);
+      color: var(--vamp-red);
+      background: var(--surface-hover);
+    }
+    .cookie-btn.btn-clear {
+      border-color: transparent;
+      background: transparent;
+      color: var(--error-text);
+    }
+    .cookie-btn.btn-clear:hover {
+      background: var(--error-bg);
+      border-color: var(--error-text);
+    }
+    .cookie-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
     /* Quiet Secondary Tonal Action Button */
     .yt-secondary-btn {
       width: 100%;
@@ -1022,14 +1084,44 @@
           </div>
         </div>
 
+        <div class="cookie-card" id="cookie-drop-zone">
+          <div class="cookie-header-row">
+            <div class="row-meta">
+              <span class="row-title">YouTube Session Cookies</span>
+              <span class="row-sub" id="cookie-status-detail">Checking session...</span>
+            </div>
+            <span class="status-pill" id="cookie-status-badge">Checking</span>
+          </div>
+
+          <div class="cookie-actions">
+            <input type="file" id="cookie-file-input" accept=".txt" style="display: none;">
+            <button type="button" class="cookie-btn" id="btn-import-cookies" title="Import Netscape cookies.txt file">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Import File</span>
+            </button>
+            <button type="button" class="cookie-btn btn-clear" id="btn-clear-cookies" title="Clear saved cookies" style="display: none;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Clear</span>
+            </button>
+            <span class="cookie-hint" id="cookie-drop-hint">or drag & drop .txt</span>
+          </div>
+        </div>
+
         <div class="section-list">
           <label class="list-row toggle-row" for="cookies-toggle">
             <div class="row-meta">
-              <span class="row-title">Load Cookies</span>
-              <span class="row-sub">Include cookies-yt.txt or cookies-jhs.txt</span>
+              <span class="row-title">Use Cookies for Downloads</span>
+              <span class="row-sub">Attach cookies-yt.txt during format analysis & downloads</span>
             </div>
             <div class="switch">
-              <input type="checkbox" id="cookies-toggle" role="switch" aria-checked="false" aria-label="Load cookies">
+              <input type="checkbox" id="cookies-toggle" role="switch" aria-checked="false" aria-label="Use cookies">
               <span class="slider"></span>
             </div>
           </label>

@@ -185,4 +185,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         sendToBridge(message.url, Boolean(message.playlist), message.items || '').then(sendResponse);
         return true;
     }
+    if (message.action === 'cookie_status') {
+        sendNative({ action: 'cookie_status' })
+            .then(sendResponse)
+            .catch((err) => sendResponse({ ok: false, error: err.message }));
+        return true;
+    }
+    if (message.action === 'import_cookies') {
+        sendNative({ action: 'import_cookies', content: message.content, target: message.target || 'youtube' })
+            .then(sendResponse)
+            .catch((err) => sendResponse({ ok: false, error: err.message }));
+        return true;
+    }
+    if (message.action === 'clear_cookies') {
+        sendNative({ action: 'clear_cookies', target: message.target || 'youtube' })
+            .then(sendResponse)
+            .catch((err) => sendResponse({ ok: false, error: err.message }));
+        return true;
+    }
 });

@@ -5,7 +5,7 @@ use std::process::Command;
 
 use crate::deps::Dependencies;
 
-const MAX_BODY_SIZE: u32 = 64 * 1024; // 64 KB limit
+const MAX_BODY_SIZE: u32 = 512 * 1024; // 512 KB limit
 
 #[derive(Debug, Deserialize)]
 pub struct BridgeRequest {
@@ -16,6 +16,8 @@ pub struct BridgeRequest {
     pub cookies: Option<bool>,
     pub playlist: Option<bool>,
     pub items: Option<String>,
+    pub content: Option<String>,
+    pub target: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -70,6 +72,72 @@ pub fn run_bridge() -> Result<()> {
     if req.action.as_deref() == Some("update") {
         launch_terminal_updater()?;
         send_response(&mut stdout, &serde_json::json!({ "ok": true }))?;
+        return Ok(());
+    }
+
+    if req.action.as_deref() == Some("cookie_status") {
+        let yt_status = crate::cookies::get_cookie_status("youtube").ok();
+        let jhs_status = crate::cookies::get_cookie_status("hotstar").ok();
+        send_response(
+            &mut stdout,
+            &serde_json::json!({
+                "ok": true,
+                "youtube": yt_status,
+                "hotstar": jhs_status
+            }),
+        )?;
+        return Ok(());
+    }
+
+    if req.action.as_deref() == Some("import_cookies") {
+        let content = req.content.unwrap_or_default();
+        let target = req.target.as_deref().unwrap_or("youtube");
+        match crate::cookies::import_and_save(&content, target) {
+            Ok(status) => {
+                send_response(
+                    &mut stdout,
+                    &serde_json::json!({
+                        "ok": true,
+                        "status": status,
+                        "message": format!("Successfully sanitized and saved {} cookies", status.sanitized_cookies)
+                    }),
+                )?;
+            }
+            Err(e) => {
+                send_response(
+                    &mut stdout,
+                    &serde_json::json!({
+                        "ok": false,
+                        "error": e.to_string()
+                    }),
+                )?;
+            }
+        }
+        return Ok(());
+    }
+
+    if req.action.as_deref() == Some("clear_cookies") {
+        let target = req.target.as_deref().unwrap_or("youtube");
+        match crate::cookies::clear_cookie(target) {
+            Ok(cleared) => {
+                send_response(
+                    &mut stdout,
+                    &serde_json::json!({
+                        "ok": true,
+                        "cleared": cleared
+                    }),
+                )?;
+            }
+            Err(e) => {
+                send_response(
+                    &mut stdout,
+                    &serde_json::json!({
+                        "ok": false,
+                        "error": e.to_string()
+                    }),
+                )?;
+            }
+        }
         return Ok(());
     }
 

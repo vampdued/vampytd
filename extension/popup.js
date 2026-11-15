@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const codecSelector = document.getElementById('codec-selector');
   const cookiesToggle = document.getElementById('cookies-toggle');
 
+  const cookieDropZone     = document.getElementById('cookie-drop-zone');
+  const cookieFileInput    = document.getElementById('cookie-file-input');
+  const btnImportCookies   = document.getElementById('btn-import-cookies');
+  const btnClearCookies    = document.getElementById('btn-clear-cookies');
+  const cookieStatusBadge  = document.getElementById('cookie-status-badge');
+  const cookieStatusDetail = document.getElementById('cookie-status-detail');
+
   const activeVideoCard           = document.getElementById('active-video-card');
   const emptyMediaCard            = document.getElementById('empty-media-card');
   const activeVideoTitle          = document.getElementById('active-video-title');
@@ -139,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       testButton.disabled = false;
       testButton.textContent = 'Test connection';
+      refreshCookieStatus();
     });
   }
 
@@ -155,6 +163,79 @@ document.addEventListener('DOMContentLoaded', () => {
         copyFolderBtn?.classList.remove('copied');
       }, 2000);
     }).catch(() => {});
+  }
+
+  // --- Cookie Management Handlers ---
+  function refreshCookieStatus() {
+    if (!cookieStatusBadge) return;
+    chrome.runtime.sendMessage({ action: 'cookie_status' }, (response) => {
+      if (chrome.runtime.lastError || !response || !response.ok) {
+        cookieStatusBadge.textContent = 'Offline';
+        cookieStatusBadge.className = 'status-pill bad';
+        if (cookieStatusDetail) cookieStatusDetail.textContent = 'Bridge disconnected';
+        if (btnClearCookies) btnClearCookies.style.display = 'none';
+        return;
+      }
+
+      const yt = response.youtube;
+      if (yt && yt.exists) {
+        if (yt.valid) {
+          cookieStatusBadge.textContent = 'Active';
+          cookieStatusBadge.className = 'status-pill good';
+          const daysText = (yt.daysRemaining !== null && yt.daysRemaining !== undefined)
+            ? `${yt.daysRemaining}d remaining`
+            : 'Active';
+          if (cookieStatusDetail) {
+            cookieStatusDetail.textContent = `Valid session (${daysText}) • ${yt.totalCookies} tokens`;
+          }
+        } else {
+          cookieStatusBadge.textContent = 'Expired';
+          cookieStatusBadge.className = 'status-pill bad';
+          if (cookieStatusDetail) cookieStatusDetail.textContent = 'Session expired • Please re-import';
+        }
+        if (btnClearCookies) btnClearCookies.style.display = 'inline-flex';
+      } else {
+        cookieStatusBadge.textContent = 'Missing';
+        cookieStatusBadge.className = 'status-pill';
+        if (cookieStatusDetail) cookieStatusDetail.textContent = 'No cookies-yt.txt loaded';
+        if (btnClearCookies) btnClearCookies.style.display = 'none';
+      }
+    });
+  }
+
+  function handleCookieFile(file) {
+    if (!file) return;
+    if (!file.name.endsWith('.txt')) {
+      alert('Please select a Netscape format cookie text file (.txt).');
+      return;
+    }
+
+    if (cookieStatusDetail) cookieStatusDetail.textContent = 'Sanitizing & saving…';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      chrome.runtime.sendMessage(
+        { action: 'import_cookies', content, target: 'youtube' },
+        (res) => {
+          if (chrome.runtime.lastError || !res || !res.ok) {
+            const err = res?.error || chrome.runtime.lastError?.message || 'Failed importing cookies';
+            alert(`Cookie import failed: ${err}`);
+            refreshCookieStatus();
+            return;
+          }
+
+          // Auto-enable cookies toggle if it was off
+          if (cookiesToggle && !cookiesToggle.checked) {
+            cookiesToggle.checked = true;
+            syncSwitchAria(cookiesToggle);
+            chrome.storage.local.set({ enableCookies: true });
+          }
+
+          refreshCookieStatus();
+        }
+      );
+    };
+    reader.readAsText(file);
   }
 
   const folderBox = document.getElementById('folder-box');
@@ -463,7 +544,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   testButton.addEventListener('click', runDiagnostics);
 
+  if (btnImportCookies && cookieFileInput) {
+    btnImportCookies.addEventListener('click', () => {
+      cookieFileInput.value = '';
+      cookieFileInput.click();
+    });
+
+    cookieFileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (file) handleCookieFile(file);
+    });
+  }
+
+  if (btnClearCookies) {
+    btnClearCookies.addEventListener('click', () => {
+      if (!confirm('Clear saved YouTube cookies?')) return;
+      chrome.runtime.sendMessage({ action: 'clear_cookies', target: 'youtube' }, () => {
+        refreshCookieStatus();
+      });
+    });
+  }
+
+  if (cookieDropZone) {
+    cookieDropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      cookieDropZone.classList.add('drag-over');
+    });
+    cookieDropZone.addEventListener('dragleave', () => {
+      cookieDropZone.classList.remove('drag-over');
+    });
+    cookieDropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      cookieDropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files?.[0];
+      if (file) handleCookieFile(file);
+    });
+  }
+
   // Initialize
   inspectActiveTab();
   runDiagnostics();
+  refreshCookieStatus();
 });
