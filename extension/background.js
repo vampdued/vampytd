@@ -22,8 +22,8 @@ function sendNative(payload) {
                 reject(new Error(chrome.runtime.lastError.message));
                 return;
             }
-            if (!response || !response.ok) {
-                reject(new Error(response?.error || 'Native host returned no response'));
+            if (!response) {
+                reject(new Error('Native host returned no response'));
                 return;
             }
             resolve(response);

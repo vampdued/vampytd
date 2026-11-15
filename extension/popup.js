@@ -46,6 +46,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentTabUrl = '';
 
+  const NATIVE_HOST = 'com.vampytd.bridge';
+
+  // Direct native messaging from popup to avoid service worker timeout/closed port errors
+  function sendNative(payload) {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendNativeMessage(NATIVE_HOST, payload, (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false, error: chrome.runtime.lastError.message });
+            return;
+          }
+          resolve(response || { ok: false, error: 'No response from bridge' });
+        });
+      } catch (err) {
+        resolve({ ok: false, error: err.message });
+      }
+    });
+  }
+
   document.getElementById('version-text').textContent =
     `v${chrome.runtime.getManifest().version}`;
 
@@ -136,13 +155,12 @@ document.addEventListener('DOMContentLoaded', () => {
     overallStatus.className = 'overall-status';
     overallText.textContent = 'Checking';
 
-    chrome.runtime.sendMessage({ action: 'diagnostics' }, (response) => {
-      const runtimeError = chrome.runtime.lastError;
-      if (runtimeError) {
+    sendNative({ action: 'diagnostics' }).then((response) => {
+      if (!response || !response.ok) {
         renderDiagnostics(null);
-        checkedTime.textContent = 'Reload extension and try again';
+        checkedTime.textContent = response?.error || 'Bridge disconnected';
       } else {
-        renderDiagnostics(response);
+        renderDiagnostics({ ok: true, native: { ok: true }, details: response });
       }
       testButton.disabled = false;
       testButton.textContent = 'Test connection';
@@ -166,41 +184,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Cookie Management Handlers ---
-  function refreshCookieStatus() {
+  async function refreshCookieStatus() {
     if (!cookieStatusBadge) return;
-    chrome.runtime.sendMessage({ action: 'cookie_status' }, (response) => {
-      if (chrome.runtime.lastError || !response || !response.ok) {
-        cookieStatusBadge.textContent = 'Offline';
-        cookieStatusBadge.className = 'status-pill bad';
-        if (cookieStatusDetail) cookieStatusDetail.textContent = 'Bridge disconnected';
-        if (btnClearCookies) btnClearCookies.style.display = 'none';
-        return;
+    const response = await sendNative({ action: 'cookie_status' });
+    if (!response || !response.ok) {
+      cookieStatusBadge.textContent = 'Offline';
+      cookieStatusBadge.className = 'status-pill bad';
+      if (cookieStatusDetail) {
+        cookieStatusDetail.textContent = response?.error ? `Bridge: ${response.error}` : 'Bridge disconnected';
       }
+      if (btnClearCookies) btnClearCookies.style.display = 'none';
+      return;
+    }
 
-      const yt = response.youtube;
-      if (yt && yt.exists) {
-        if (yt.valid) {
-          cookieStatusBadge.textContent = 'Active';
-          cookieStatusBadge.className = 'status-pill good';
-          const daysText = (yt.daysRemaining !== null && yt.daysRemaining !== undefined)
-            ? `${yt.daysRemaining}d remaining`
-            : 'Active';
-          if (cookieStatusDetail) {
-            cookieStatusDetail.textContent = `Valid session (${daysText}) • ${yt.totalCookies} tokens`;
-          }
-        } else {
-          cookieStatusBadge.textContent = 'Expired';
-          cookieStatusBadge.className = 'status-pill bad';
-          if (cookieStatusDetail) cookieStatusDetail.textContent = 'Session expired • Please re-import';
+    const yt = response.youtube;
+    if (yt && yt.exists) {
+      if (yt.valid) {
+        cookieStatusBadge.textContent = 'Active';
+        cookieStatusBadge.className = 'status-pill good';
+        const daysText = (yt.daysRemaining !== null && yt.daysRemaining !== undefined)
+          ? `${yt.daysRemaining}d remaining`
+          : 'Active';
+        if (cookieStatusDetail) {
+          cookieStatusDetail.textContent = `Valid session (${daysText}) • ${yt.totalCookies} tokens`;
         }
-        if (btnClearCookies) btnClearCookies.style.display = 'inline-flex';
       } else {
-        cookieStatusBadge.textContent = 'Missing';
-        cookieStatusBadge.className = 'status-pill';
-        if (cookieStatusDetail) cookieStatusDetail.textContent = 'No cookies-yt.txt loaded';
-        if (btnClearCookies) btnClearCookies.style.display = 'none';
+        cookieStatusBadge.textContent = 'Expired';
+        cookieStatusBadge.className = 'status-pill bad';
+        if (cookieStatusDetail) cookieStatusDetail.textContent = 'Session expired • Please re-import';
       }
-    });
+      if (btnClearCookies) btnClearCookies.style.display = 'inline-flex';
+    } else {
+      cookieStatusBadge.textContent = 'Missing';
+      cookieStatusBadge.className = 'status-pill';
+      if (cookieStatusDetail) cookieStatusDetail.textContent = 'No cookies-yt.txt loaded';
+      if (btnClearCookies) btnClearCookies.style.display = 'none';
+    }
   }
 
   function handleCookieFile(file) {
@@ -212,28 +231,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (cookieStatusDetail) cookieStatusDetail.textContent = 'Sanitizing & saving…';
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const content = e.target.result;
-      chrome.runtime.sendMessage(
-        { action: 'import_cookies', content, target: 'youtube' },
-        (res) => {
-          if (chrome.runtime.lastError || !res || !res.ok) {
-            const err = res?.error || chrome.runtime.lastError?.message || 'Failed importing cookies';
-            alert(`Cookie import failed: ${err}`);
-            refreshCookieStatus();
-            return;
-          }
+      const res = await sendNative({ action: 'import_cookies', content, target: 'youtube' });
+      if (!res || !res.ok) {
+        const err = res?.error || 'Failed importing cookies';
+        alert(`Cookie import failed: ${err}`);
+        refreshCookieStatus();
+        return;
+      }
 
-          // Auto-enable cookies toggle if it was off
-          if (cookiesToggle && !cookiesToggle.checked) {
-            cookiesToggle.checked = true;
-            syncSwitchAria(cookiesToggle);
-            chrome.storage.local.set({ enableCookies: true });
-          }
+      // Auto-enable cookies toggle if it was off
+      if (cookiesToggle && !cookiesToggle.checked) {
+        cookiesToggle.checked = true;
+        syncSwitchAria(cookiesToggle);
+        chrome.storage.local.set({ enableCookies: true });
+      }
 
-          refreshCookieStatus();
-        }
-      );
+      refreshCookieStatus();
     };
     reader.readAsText(file);
   }
@@ -557,11 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (btnClearCookies) {
-    btnClearCookies.addEventListener('click', () => {
+    btnClearCookies.addEventListener('click', async () => {
       if (!confirm('Clear saved YouTube cookies?')) return;
-      chrome.runtime.sendMessage({ action: 'clear_cookies', target: 'youtube' }, () => {
-        refreshCookieStatus();
-      });
+      await sendNative({ action: 'clear_cookies', target: 'youtube' });
+      refreshCookieStatus();
     });
   }
 
