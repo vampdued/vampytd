@@ -1,6 +1,6 @@
 [package]
 name = "vampytd"
-version = "2.2.0"
+version = "2.3.0"
 edition = "2021"
 authors = ["VampDued"]
 description = "High-performance unified YouTube downloader and Chrome Native Messaging Bridge with embedded Ratatui & Nucleo fuzzy TUI"

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.2.0-FF0A21?style=flat-square" alt="Version 2.2.0"></a>
+  <a href="https://github.com/vampdued/vampytd/releases"><img src="https://img.shields.io/badge/version-2.3.0-FF0A21?style=flat-square" alt="Version 2.3.0"></a>
   <img src="https://img.shields.io/badge/rust-2021_edition-FF0A21?style=flat-square&logo=rust&logoColor=white" alt="Rust 2021">
   <img src="https://img.shields.io/badge/platform-Windows_x64-0E0E12?style=flat-square&logo=windows&logoColor=white" alt="Windows x64">
   <img src="https://img.shields.io/badge/engine-yt--dlp-FF0A21?style=flat-square&logo=youtube&logoColor=white" alt="yt-dlp Engine">
@@ -59,6 +59,10 @@ vampytd/
   - Multi-track language tagging (e.g. `Opus [en]`, `AAC [hi]`).
   - Real-time auto-pairing status line previewing the exact audio track that pairs with the highlighted video stream.
 - ⚡ **Zero Subprocess Overhead**: Replaces external `fzf.exe` and PowerShell toast processes with native Rust and WinRT notification APIs.
+- 🍪 **Smart Cookie Management & Sanitizer**:
+  - Automatically strips third-party ad/tracking telemetry (DoubleClick, Analytics) and retains essential authentication tokens (`LOGIN_INFO`, `SID`, `HSID`, `SSID`).
+  - 1-click file import & drag-and-drop right inside the Chrome/Edge extension popup.
+  - Built-in `vampytd cookies status` CLI audit tool reporting session validity, token checklists, and days remaining.
 - 🎬 **Multi-Stream Selection**: Easily select and combine video and audio streams with keyboard navigation (`Spacebar` to tag, `Enter` to confirm).
 - 🌐 **Seamless Browser Extension Bridge**: One-click download trigger directly from YouTube pages in Chrome, Brave, and Edge via Chrome Native Messaging.
 
@@ -143,6 +147,18 @@ vampytd https://www.youtube.com/playlist?list=PLAYLIST_ID --playlist --items 1-5
 ### Update yt-dlp
 ```powershell
 vampytd update
+```
+
+### Cookie Management (Sanitized Auth)
+```powershell
+# Audit health and validity of saved cookies
+vampytd cookies status
+
+# Sanitize and import any Netscape cookies.txt file
+vampytd cookies import "C:\path\to\downloaded_cookies.txt"
+
+# Clear saved cookies
+vampytd cookies clear
 ```
 
 ### Native Messaging Host Mode (Automated)
