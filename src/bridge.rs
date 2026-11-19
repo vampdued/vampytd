@@ -99,7 +99,7 @@ pub fn run_bridge() -> Result<()> {
                     &serde_json::json!({
                         "ok": true,
                         "status": status,
-                        "message": format!("Successfully sanitized and saved {} cookies", status.sanitized_cookies)
+                        "message": format!("Saved {} cleaned cookies", status.sanitized_cookies)
                     }),
                 )?;
             }
@@ -165,7 +165,7 @@ fn read_message<R: Read>(reader: &mut R) -> Result<Option<BridgeRequest>> {
 
     let len = u32::from_ne_bytes(len_bytes);
     if len > MAX_BODY_SIZE {
-        anyhow::bail!("Request length {} exceeds max 64KB", len);
+        anyhow::bail!("Request length {} exceeds max 512KB", len);
     }
 
     let mut body = vec![0u8; len as usize];
@@ -209,8 +209,10 @@ fn launch_terminal_downloader(req: BridgeRequest) -> Result<()> {
             args.push("--no-cookies".to_string());
         }
     }
-    if req.playlist.unwrap_or(false) {
-        args.push("--playlist".to_string());
+    match req.playlist {
+        Some(true) => args.push("--playlist".to_string()),
+        Some(false) => args.push("--no-playlist".to_string()),
+        None => {}
     }
     if let Some(items) = req.items {
         if !items.trim().is_empty() {
@@ -219,7 +221,7 @@ fn launch_terminal_downloader(req: BridgeRequest) -> Result<()> {
         }
     }
 
-    spawn_terminal_process(&current_exe, &args, "VampYTD Downloader")
+    spawn_terminal_process(&current_exe, &args, "VampYTD")
 }
 
 fn launch_terminal_updater() -> Result<()> {

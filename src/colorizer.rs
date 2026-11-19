@@ -30,7 +30,7 @@ pub fn execute_with_colorizer(mut cmd: Command) -> Result<()> {
         anyhow::bail!("yt-dlp exited with error status: {}", status);
     }
 
-    println!("\n\x1b[32;1m✔ Download and merge completed successfully!\x1b[0m\n");
+    println!("\n\x1b[32;1m✔ Download complete\x1b[0m\n");
     Ok(())
 }
 

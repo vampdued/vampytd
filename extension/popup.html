@@ -37,9 +37,11 @@
     :root {
       color-scheme: light dark;
 
-      /* VampYTD Brand Tokens */
+      /* VampYTD Brand Tokens (aligned with vampytd-brand-kit/tokens/colors.css) */
       --vamp-red: #FF0A21;
-      --vamp-red-deep: #E00019;
+      --vamp-red-deep: #E00019;   /* 5.02:1 with white text — WCAG AA for small text */
+      --vamp-red-hover: #C40016;
+      --vamp-red-active: #A80013;
       --vamp-ink: #0E0E12;
       --vamp-white: #FFFFFF;
       --vamp-graphite: #1C1C22;
@@ -47,115 +49,70 @@
       --vamp-mist: #F4F4F6;
       --vamp-line: #E2E2E7;
 
-      /* Light Theme (Default) */
-      --bg: var(--vamp-white);
-      --surface: var(--vamp-white);
-      --surface-subtle: var(--vamp-mist);
-      --surface-hover: #ebebee;
-      --surface-muted: var(--vamp-mist);
-      --border: var(--vamp-line);
-      --border-subtle: #f0f0f4;
-      --border-focus: var(--vamp-ink);
-      --text: var(--vamp-ink);
-      --text-secondary: #3c3c46;
-      --text-muted: var(--vamp-slate);
+      /* Semantic Tokens (single light-dark() layer, responds to OS & YouTube theme) */
+      --bg: light-dark(var(--vamp-white), var(--vamp-ink));
+      --surface: light-dark(var(--vamp-white), var(--vamp-graphite));
+      --surface-subtle: light-dark(var(--vamp-mist), #24242C);
+      --surface-hover: light-dark(#EBEBEE, #2C2C36);
+      --surface-muted: light-dark(var(--vamp-mist), #18181F);
+      --border: light-dark(var(--vamp-line), #2A2A32);
+      --border-subtle: light-dark(#F0F0F4, #202028);
+      --border-focus: light-dark(var(--vamp-ink), var(--vamp-white));
+      --text: light-dark(var(--vamp-ink), var(--vamp-white));
+      --text-secondary: light-dark(#3C3C46, #D1D1D8);
+      --text-muted: light-dark(var(--vamp-slate), #A4A4B0);
 
-      /* Primary Brand Action & Badges */
-      --yt-red: var(--vamp-red);
-      --yt-red-hover: var(--vamp-red-deep);
-      --yt-red-active: #c20016;
-      --yt-red-badge: var(--vamp-red);
+      /* Brand Action & Accent Tokens */
+      --brand-accent: var(--vamp-red);
+      --brand-action: var(--vamp-red-deep);
+      --brand-action-hover: var(--vamp-red-hover);
+      --brand-action-active: var(--vamp-red-active);
+      --brand-text: light-dark(var(--vamp-red-deep), #FF4D5E);
+      --badge-hotstar: #0369A1;
 
       /* Hero Media Card */
-      --card-hero-bg: var(--vamp-mist);
-      --card-hero-border: var(--vamp-line);
+      --card-hero-bg: light-dark(var(--vamp-mist), #16161C);
+      --card-hero-border: light-dark(var(--vamp-line), #2A2A32);
 
       /* Switch Styles */
-      --switch-track: var(--vamp-line);
-      --switch-active: var(--vamp-red);
+      --switch-track: light-dark(#D0D0D8, #353540);
+      --switch-active: var(--vamp-red-deep);
       --switch-thumb: var(--vamp-white);
 
-      /* Telemetry Status Colors */
-      --success-text: #047857;
-      --success-bg: #ecfdf5;
-      --warning-text: #b45309;
-      --warning-bg: #fffbeb;
-      --error-text: #b91c1c;
-      --error-bg: #fef2f2;
+      /* Status Colors (WCAG AA on their respective backgrounds) */
+      --success-text: light-dark(#047857, #34D399);
+      --success-bg: light-dark(#ECFDF5, rgba(6, 78, 59, 0.28));
+      --success-solid: #047857;
+      --warning-text: light-dark(#B45309, #FBBF24);
+      --warning-bg: light-dark(#FFFBEB, rgba(120, 53, 15, 0.28));
+      --error-text: light-dark(#B91C1C, #F87171);
+      --error-bg: light-dark(#FEF2F2, rgba(127, 29, 29, 0.28));
+      --error-solid: #B91C1C;
     }
 
-    /* Dark Theme: System preference or dynamic [data-theme="dark"] */
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --bg: var(--vamp-ink);
-        --surface: var(--vamp-graphite);
-        --surface-subtle: #24242c;
-        --surface-hover: #2c2c36;
-        --surface-muted: #18181f;
-        --border: #2a2a34;
-        --border-subtle: #202028;
-        --border-focus: var(--vamp-white);
-        --text: var(--vamp-white);
-        --text-secondary: #d1d1d8;
-        --text-muted: #a4a4b0;
-
-        --yt-red: var(--vamp-red);
-        --yt-red-hover: var(--vamp-red-deep);
-        --yt-red-active: #c20016;
-        --yt-red-badge: var(--vamp-red);
-
-        --card-hero-bg: #16161c;
-        --card-hero-border: #2a2a34;
-
-        --switch-track: #353540;
-        --switch-active: var(--vamp-red);
-        --switch-thumb: var(--vamp-white);
-
-        --success-text: #34d399;
-        --success-bg: #064e3b33;
-        --warning-text: #fbbf24;
-        --warning-bg: #78350f33;
-        --error-text: #f87171;
-        --error-bg: #7f1d1d33;
-      }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
     }
 
-    [data-theme="dark"] {
-      --bg: var(--vamp-ink);
-      --surface: var(--vamp-graphite);
-      --surface-subtle: #24242c;
-      --surface-hover: #2c2c36;
-      --surface-muted: #18181f;
-      --border: #2a2a34;
-      --border-subtle: #202028;
-      --border-focus: var(--vamp-white);
-      --text: var(--vamp-white);
-      --text-secondary: #d1d1d8;
-      --text-muted: #a4a4b0;
-
-      --yt-red: var(--vamp-red);
-      --yt-red-hover: var(--vamp-red-deep);
-      --yt-red-active: #c20016;
-      --yt-red-badge: var(--vamp-red);
-
-      --card-hero-bg: #16161c;
-      --card-hero-border: #2a2a34;
-
-      --switch-track: #353540;
-      --switch-active: var(--vamp-red);
-      --switch-thumb: var(--vamp-white);
-
-      --success-text: #34d399;
-      --success-bg: #064e3b33;
-      --warning-text: #fbbf24;
-      --warning-bg: #78350f33;
-      --error-text: #f87171;
-      --error-bg: #7f1d1d33;
+    :root[data-theme="light"] {
+      color-scheme: light;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     [hidden] { display: none !important; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
 
     html {
       scrollbar-gutter: stable;
@@ -167,7 +124,7 @@
       overflow-y: auto;
       scrollbar-gutter: stable;
       scrollbar-width: thin;
-      scrollbar-color: light-dark(#b9b9c2, #4a4a55) transparent;
+      scrollbar-color: light-dark(#B9B9C2, #4A4A55) transparent;
       background: var(--bg);
       color: var(--text);
       font: 13px/1.45 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -176,24 +133,17 @@
     }
 
     ::selection {
-      background: var(--vamp-red);
+      background: var(--brand-accent);
       color: var(--vamp-ink);
     }
 
-    /* WebKit scrollbar fallback */
-    body::-webkit-scrollbar {
-      width: 6px;
-    }
-    body::-webkit-scrollbar-track {
-      background: transparent;
-    }
+    body::-webkit-scrollbar { width: 6px; }
+    body::-webkit-scrollbar-track { background: transparent; }
     body::-webkit-scrollbar-thumb {
       background: var(--border);
       border-radius: 999px;
     }
-    body::-webkit-scrollbar-thumb:hover {
-      background: var(--text-muted);
-    }
+    body::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
     .shell { padding: 14px 16px 16px; }
 
@@ -213,11 +163,6 @@
       text-decoration: none;
     }
 
-    .brand-picture {
-      display: flex;
-      align-items: center;
-    }
-
     .brand-logo {
       height: 22px;
       width: auto;
@@ -225,12 +170,23 @@
       display: block;
     }
 
+    /* Theme-aware logo switching (works for both OS theme and [data-theme] override) */
+    .logo-dark { display: none; }
+    .logo-light { display: block; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .logo-dark { display: block; }
+      :root:not([data-theme="light"]) .logo-light { display: none; }
+    }
+    :root[data-theme="dark"] .logo-dark { display: block; }
+    :root[data-theme="dark"] .logo-light { display: none; }
+
     .brand-version {
       display: inline-block;
       color: var(--text-muted);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 1px 5px;
+      padding: 1px 6px;
       background: var(--surface-muted);
       border-radius: 4px;
     }
@@ -238,23 +194,25 @@
     .overall-status {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
+      gap: 6px;
+      padding: 3px 9px;
       border-radius: 999px;
       font-size: 11px;
       font-weight: 600;
       user-select: none;
+      color: var(--text-muted);
+      background: var(--surface-muted);
     }
 
-    .dot { width: 6px; height: 6px; border-radius: 50%; }
-    .overall-status.good .dot { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.5); }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); }
+    .overall-status.good .dot { background: #10B981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
     .overall-status.good { color: var(--success-text); background: var(--success-bg); }
-    .overall-status.warn .dot { background: #f59e0b; }
+    .overall-status.warn .dot { background: #F59E0B; }
     .overall-status.warn { color: var(--warning-text); background: var(--warning-bg); }
-    .overall-status.bad  .dot { background: #ef4444; }
-    .overall-status.bad  { color: var(--error-text); background: var(--error-bg); }
+    .overall-status.bad .dot { background: #EF4444; }
+    .overall-status.bad { color: var(--error-text); background: var(--error-bg); }
 
-    /* Native YouTube Underline Tabs */
+    /* Underline Tabs */
     .tabs {
       display: flex;
       border-bottom: 1px solid var(--border);
@@ -265,21 +223,26 @@
     .tab {
       border: 0;
       background: transparent;
-      padding: 6px 2px 10px;
+      padding: 6px 4px 10px;
       color: var(--text-muted);
       cursor: pointer;
       font: inherit;
       font-size: 13px;
-      font-weight: 550;
+      font-weight: 600;
       position: relative;
+      border-radius: 4px 4px 0 0;
       transition: color 0.15s;
     }
 
     .tab:hover { color: var(--text); }
-    .tab:focus-visible { outline: none; color: var(--yt-red); }
+    .tab:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+      color: var(--text);
+    }
     .tab.active {
       color: var(--text);
-      font-weight: 650;
+      font-weight: 700;
     }
     .tab.active::after {
       content: "";
@@ -288,7 +251,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: var(--yt-red);
+      background: var(--brand-accent);
       border-radius: 2px;
     }
 
@@ -304,7 +267,7 @@
       }
     }
 
-    /* Hero Media Card (Neutral with Crisp Internal Crimson Signpost) */
+    /* Hero Media Card */
     .hero-media-card {
       position: relative;
       overflow: hidden;
@@ -312,11 +275,10 @@
       border: 1px solid var(--card-hero-border);
       border-radius: 10px;
       padding: 12px 14px 12px 16px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .hero-media-card::before {
       content: "";
@@ -325,7 +287,7 @@
       left: 0;
       bottom: 0;
       width: 3.5px;
-      background: var(--yt-red);
+      background: var(--brand-accent);
     }
 
     .empty-media-card {
@@ -333,13 +295,11 @@
       border: 1px dashed var(--border);
       border-radius: 10px;
       padding: 12px 14px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 12px;
-      transition: opacity 0.15s ease, border-color 0.15s ease;
     }
-    .empty-media-card[hidden] { display: none; }
     .empty-media-icon {
       color: var(--text-muted);
       flex-shrink: 0;
@@ -352,46 +312,47 @@
     .empty-media-title {
       font-size: 12px;
       font-weight: 600;
-      color: var(--text-secondary);
+      color: var(--text);
     }
     .empty-media-sub {
       font-size: 11px;
       color: var(--text-muted);
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .media-card-header {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .site-badge {
       display: inline-block;
       padding: 2px 6px;
       border-radius: 4px;
-      background: var(--yt-red-badge);
-      color: #ffffff;
-      font-size: 9px;
+      background: var(--brand-action);
+      color: var(--vamp-white);
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
       flex-shrink: 0;
     }
-    .site-badge.hotstar { background: #0284c7; }
+    .site-badge.hotstar { background: var(--badge-hotstar); }
 
-    .detected-pill {
-      font-size: 10px;
+    .context-pill {
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       background: var(--surface-muted);
-      padding: 1px 6px;
+      border: 1px solid var(--border);
+      padding: 1px 7px;
       border-radius: 4px;
     }
 
     .active-video-title {
       font-weight: 600;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text);
       line-height: 1.35;
       display: -webkit-box;
@@ -400,7 +361,7 @@
       overflow: hidden;
     }
 
-    /* Primary Action CTA (Native YouTube Crimson Pill) */
+    /* Primary Action CTA (WCAG AA #E00019 + white = 5.02:1) */
     .yt-primary-btn {
       width: 100%;
       display: flex;
@@ -410,25 +371,27 @@
       padding: 8px 14px;
       border: 0;
       border-radius: 999px;
-      background: var(--yt-red);
-      color: #ffffff;
+      background: var(--brand-action);
+      color: var(--vamp-white);
       cursor: pointer;
       font: inherit;
       font-size: 12px;
       font-weight: 600;
-      box-shadow: 0 1px 3px rgba(204, 0, 0, 0.25);
+      box-shadow: 0 1px 3px rgba(224, 0, 25, 0.25);
       transition: background 0.15s, transform 0.1s;
     }
-    .yt-primary-btn:hover { background: var(--yt-red-hover); }
-    .yt-primary-btn:active { transform: scale(0.99); background: var(--yt-red-active); }
-    .yt-primary-btn:focus-visible { outline: 2px solid var(--yt-red); outline-offset: 1px; }
-    .yt-primary-btn:disabled { opacity: 0.65; cursor: wait; }
+    .yt-primary-btn:hover { background: var(--brand-action-hover); }
+    .yt-primary-btn:active { transform: scale(0.99); background: var(--brand-action-active); }
+    .yt-primary-btn:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+    .yt-primary-btn:disabled { opacity: 0.7; cursor: wait; }
+    .yt-primary-btn.state-ok { background: var(--success-solid); box-shadow: none; }
+    .yt-primary-btn.state-err { background: var(--error-solid); box-shadow: none; }
 
     .media-card-actions {
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .playlist-sub-btn {
@@ -440,11 +403,11 @@
       padding: 7px 12px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: var(--surface-muted);
+      background: var(--surface);
       color: var(--text);
       cursor: pointer;
       font: inherit;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
@@ -454,10 +417,103 @@
     }
     .playlist-sub-btn:focus-visible {
       outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
     }
-    .playlist-sub-btn:disabled {
-      opacity: 0.6;
-      cursor: wait;
+    .playlist-sub-btn:disabled { opacity: 0.65; cursor: wait; }
+    .playlist-sub-btn.state-ok { border-color: var(--success-text); color: var(--success-text); }
+    .playlist-sub-btn.state-err { border-color: var(--error-text); color: var(--error-text); }
+
+    /* Compact System Status Accordion */
+    .system-details {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-subtle);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .system-details summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      user-select: none;
+      transition: background 0.12s ease;
+    }
+    .system-details summary::-webkit-details-marker,
+    .system-details summary::marker {
+      display: none;
+    }
+    .system-details summary:hover {
+      background: var(--surface-hover);
+    }
+    .system-details summary:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: -2px;
+      border-radius: 7px;
+    }
+
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .chevron-indicator {
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid var(--text-muted);
+      border-bottom: 1.5px solid var(--text-muted);
+      transform: rotate(-45deg);
+      transition: transform 0.18s ease;
+      flex-shrink: 0;
+      margin-left: 2px;
+    }
+    .system-details[open] .chevron-indicator {
+      transform: rotate(45deg);
+    }
+
+    .system-details-body {
+      padding: 0 12px 10px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .tools-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      padding-top: 9px;
+    }
+
+    .tool-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .tool-name { color: var(--text-secondary); font-weight: 600; }
+    .tool-val { font-weight: 600; color: var(--text-muted); font-size: 11px; }
+    .tool-val.good { color: var(--success-text); }
+    .tool-val.warn { color: var(--warning-text); }
+    .tool-val.bad  { color: var(--error-text); }
+
+    .bridge-help-note {
+      margin-top: 8px;
+      padding: 7px 9px;
+      border-radius: 6px;
+      background: var(--error-bg);
+      color: var(--error-text);
+      font-size: 11px;
+      line-height: 1.35;
     }
 
     /* Borderless Section Rows */
@@ -477,21 +533,22 @@
     }
     .list-row:last-child { border-bottom: 0; }
 
-    .row-meta { display: flex; flex-direction: column; gap: 1px; flex: 1; }
-    .row-title { font-weight: 550; font-size: 12px; color: var(--text); }
-    .row-sub { font-size: 11px; color: var(--text-muted); }
+    .row-meta { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .row-title { font-weight: 600; font-size: 12px; color: var(--text); }
+    .row-sub { font-size: 11px; color: var(--text-muted); line-height: 1.35; }
 
     .status-pill {
       font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
       text-align: right;
+      flex-shrink: 0;
     }
     .status-pill.good { color: var(--success-text); }
     .status-pill.warn { color: var(--warning-text); }
     .status-pill.bad  { color: var(--error-text); }
 
-    /* Clickable Toggle Rows (44px target) */
+    /* Clickable Toggle Rows */
     .toggle-row {
       cursor: pointer;
       user-select: none;
@@ -500,91 +557,16 @@
       border-radius: 8px;
       transition: background 0.12s ease;
     }
-    .toggle-row:hover {
-      background: var(--surface-hover);
-    }
+    .toggle-row:hover { background: var(--surface-hover); }
 
-    /* Balanced 3-Column Tools Grid */
-    .tools-accordion {
-      margin-top: 2px;
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 6px;
-    }
-
-    .tools-accordion summary {
-      cursor: pointer;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      user-select: none;
-      padding: 6px 0;
-      transition: color 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      list-style: none;
-    }
-    .tools-accordion summary::-webkit-details-marker,
-    .tools-accordion summary::marker {
-      display: none;
-    }
-    .tools-accordion summary::before {
-      content: "";
-      display: inline-block;
-      width: 4px;
-      height: 4px;
-      border-right: 1.5px solid var(--text-muted);
-      border-bottom: 1.5px solid var(--text-muted);
-      transform: rotate(-45deg);
-      transition: transform 0.18s ease;
-      flex-shrink: 0;
-      margin-left: 2px;
-    }
-    .tools-accordion[open] summary::before {
-      transform: rotate(45deg);
-    }
-    .tools-accordion summary:hover { color: var(--text-secondary); }
-
-    .tools-chips-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      padding: 8px 0 4px;
-    }
-
-    .tool-chip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      padding: 6px 8px;
-      background: var(--surface-muted);
-      border-radius: 6px;
-      font-size: 11px;
-    }
-    .tool-chip.span-full {
-      grid-column: 1 / -1;
-    }
-    .tool-name { color: var(--text-secondary); font-weight: 550; }
-    .tool-val { font-weight: 600; color: var(--text-muted); font-size: 11px; }
-    .tool-val.good { color: var(--success-text); }
-    .tool-val.warn { color: var(--warning-text); }
-    .tool-val.bad  { color: var(--error-text); }
-
-    /* Actionable Destination Folder Container */
+    /* Destination Folder Container (no nested clickable div) */
     .folder-section {
-      padding: 10px 0 12px;
-      border-top: 1px solid var(--border-subtle);
+      padding: 2px 0 12px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .folder-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
     .folder-label {
       font-size: 11px;
       font-weight: 600;
@@ -599,16 +581,7 @@
       background: var(--surface-subtle);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 5px 8px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .folder-box:hover {
-      border-color: var(--text-secondary);
-      background: var(--surface-hover);
-    }
-    .folder-box:focus-within {
-      outline: 2px solid var(--border-focus);
+      padding: 5px 6px 5px 9px;
     }
 
     .folder-path {
@@ -632,7 +605,7 @@
       font: inherit;
       font-size: 11px;
       font-weight: 600;
-      padding: 3px 8px;
+      padding: 4px 8px;
       border-radius: 4px;
       flex-shrink: 0;
       transition: color 0.15s, background 0.15s, border-color 0.15s;
@@ -641,75 +614,21 @@
       background: var(--surface-hover);
       border-color: var(--text-secondary);
     }
+    .btn-copy-folder:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 1px;
+    }
+    .btn-copy-folder:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .btn-copy-folder.copied {
       color: var(--success-text);
       border-color: var(--success-text);
       background: var(--success-bg);
     }
 
-    /* Cookie Manager Card */
-    .cookie-card {
-      background: var(--surface-subtle);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .cookie-card.drag-over {
-      border-color: var(--vamp-red);
-      background: var(--surface-hover);
-    }
-    .cookie-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .cookie-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .cookie-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 10px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      font-family: inherit;
-    }
-    .cookie-btn:hover {
-      border-color: var(--vamp-red);
-      color: var(--vamp-red);
-      background: var(--surface-hover);
-    }
-    .cookie-btn.btn-clear {
-      border-color: transparent;
-      background: transparent;
-      color: var(--error-text);
-    }
-    .cookie-btn.btn-clear:hover {
-      background: var(--error-bg);
-      border-color: var(--error-text);
-    }
-    .cookie-hint {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    /* Quiet Secondary Tonal Action Button */
+    /* Quiet Secondary Action Button */
     .yt-secondary-btn {
       width: 100%;
       padding: 8px 12px;
@@ -724,15 +643,18 @@
       transition: background 0.15s, border-color 0.15s;
     }
     .yt-secondary-btn:hover { background: var(--surface-hover); border-color: var(--text-secondary); }
-    .yt-secondary-btn:focus-visible { outline: 2px solid var(--border-focus); }
+    .yt-secondary-btn:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
     .yt-secondary-btn:disabled { opacity: 0.6; cursor: wait; }
 
-    .checked-time { margin-top: 6px; color: var(--text-muted); font-size: 10px; text-align: center; }
+    .checked-time {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 11px;
+      text-align: center;
+    }
 
     /* Settings Groups */
-    .settings-group {
-      margin-bottom: 12px;
-    }
+    .settings-group { margin-bottom: 12px; }
     .settings-heading {
       color: var(--text-muted);
       font-size: 11px;
@@ -740,11 +662,8 @@
       margin-bottom: 6px;
     }
 
-    /* Option Chips with Native Left Radio Indicators */
-    .options-grid {
-      display: grid;
-      gap: 5px;
-    }
+    /* Option Chips with Radio Indicators */
+    .options-grid { display: grid; gap: 5px; }
 
     .option-chip {
       display: flex;
@@ -762,13 +681,14 @@
       background: var(--surface-hover);
       border-color: var(--text-secondary);
     }
-    .option-chip:focus-visible { outline: 2px solid var(--border-focus); }
-    
+    .option-chip:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 1px;
+    }
     .option-chip.active {
       border-color: var(--text);
       background: var(--surface-subtle);
       color: var(--text);
-      font-weight: 600;
       box-shadow: 0 0 0 1px var(--text);
     }
 
@@ -787,39 +707,28 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: border-color 0.15s, background 0.15s;
+      transition: border-color 0.15s;
     }
     .radio-dot::after {
       content: "";
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: var(--yt-red);
+      background: var(--brand-accent);
       opacity: 0;
       transform: scale(0.4);
       transition: transform 0.15s ease, opacity 0.15s ease;
     }
-    .option-chip:hover .radio-dot {
-      border-color: var(--text-secondary);
-    }
-    .option-chip.active .radio-dot {
-      border-color: var(--yt-red);
-    }
-    .option-chip.active .radio-dot::after {
-      opacity: 1;
-      transform: scale(1);
-    }
+    .option-chip:hover .radio-dot { border-color: var(--text-secondary); }
+    .option-chip.active .radio-dot { border-color: var(--brand-accent); }
+    .option-chip.active .radio-dot::after { opacity: 1; transform: scale(1); }
 
-    .option-title { font-weight: 550; font-size: 12px; }
-    .option-chip.active .option-title { font-weight: 650; }
+    .option-title { font-weight: 600; font-size: 12px; }
+    .option-chip.active .option-title { font-weight: 700; }
     .option-meta { font-size: 11px; color: var(--text-muted); }
 
-    /* Preferred Codec: Auto Hero Pill + Balanced 2x2 Grid */
-    .codec-container {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
+    /* Preferred Codec: Auto Hero + 2x2 Grid */
+    .codec-container { display: flex; flex-direction: column; gap: 5px; }
 
     .codec-hero {
       display: flex;
@@ -834,16 +743,15 @@
       transition: background 0.12s, border-color 0.12s, color 0.12s;
     }
     .codec-hero:hover { background: var(--surface-hover); border-color: var(--text-secondary); }
-    .codec-hero:focus-visible { outline: 2px solid var(--border-focus); }
+    .codec-hero:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
     .codec-hero.active {
       border-color: var(--text);
       background: var(--surface-subtle);
       color: var(--text);
-      font-weight: 650;
       box-shadow: 0 0 0 1px var(--text);
     }
-    .codec-hero-title { font-size: 12px; font-weight: 550; }
-    .codec-hero.active .codec-hero-title { font-weight: 650; }
+    .codec-hero-title { font-size: 12px; font-weight: 600; }
+    .codec-hero.active .codec-hero-title { font-weight: 700; }
     .codec-hero-meta { font-size: 11px; color: var(--text-muted); }
 
     .codec-grid-2x2 {
@@ -857,7 +765,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 7px 4px;
+      padding: 7px 6px;
       border: 1px solid var(--border);
       border-radius: 6px;
       background: var(--surface);
@@ -867,19 +775,109 @@
       transition: background 0.12s, border-color 0.12s, color 0.12s;
     }
     .codec-chip:hover { background: var(--surface-hover); border-color: var(--text-secondary); }
-    .codec-chip:focus-visible { outline: 2px solid var(--border-focus); }
-    
+    .codec-chip:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 1px; }
     .codec-chip.active {
       border-color: var(--text);
       background: var(--surface-subtle);
       color: var(--text);
-      font-weight: 650;
       box-shadow: 0 0 0 1px var(--text);
     }
-    .codec-title { font-size: 11px; font-weight: 600; text-align: center; }
-    .codec-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; text-align: center; }
+    .codec-title { font-size: 12px; font-weight: 600; }
+    .codec-chip.active .codec-title { font-weight: 700; }
+    .codec-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
 
-    /* Native YouTube Neutral Toggle Switch */
+    /* Unified YouTube Cookies Card (Toggle first -> Status & Import) */
+    .cookie-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cookie-card.drag-over {
+      border-color: var(--brand-accent);
+      background: var(--surface-hover);
+    }
+
+    .cookie-toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .cookie-divider {
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .cookie-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .cookie-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .cookie-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      font-family: inherit;
+    }
+    .cookie-btn:hover {
+      border-color: var(--brand-text);
+      color: var(--brand-text);
+      background: var(--surface-hover);
+    }
+    .cookie-btn:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 1px;
+    }
+    .cookie-btn.btn-clear {
+      border-color: transparent;
+      background: transparent;
+      color: var(--error-text);
+    }
+    .cookie-btn.btn-clear:hover,
+    .cookie-btn.btn-clear.confirming {
+      background: var(--error-bg);
+      border-color: var(--error-text);
+    }
+    .cookie-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .cookie-feedback {
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+    .cookie-feedback.good { color: var(--success-text); background: var(--success-bg); }
+    .cookie-feedback.bad { color: var(--error-text); background: var(--error-bg); }
+
+    /* Toggle Switch */
     .switch {
       position: relative;
       width: 36px;
@@ -893,7 +891,7 @@
       border-radius: 999px;
       background: var(--switch-track);
       cursor: pointer;
-      transition: background .18s;
+      transition: background 0.18s;
     }
     .slider::before {
       content: "";
@@ -904,117 +902,118 @@
       left: 3px;
       border-radius: 50%;
       background: var(--switch-thumb);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
-      transition: transform .18s;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      transition: transform 0.18s;
     }
-    .switch input:checked + .slider             { background: var(--switch-active); }
-    .switch input:checked + .slider::before     { transform: translateX(16px); }
+    .switch input:checked + .slider { background: var(--switch-active); }
+    .switch input:checked + .slider::before { transform: translateX(16px); }
     .switch input:focus-visible + .slider {
       outline: 2px solid var(--border-focus);
       outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="shell">
+    <h1 class="sr-only">VampYTD</h1>
+
     <!-- Header -->
     <header>
       <div class="brand">
-        <picture class="brand-picture">
-          <source srcset="icons/vampytd-horizontal-reverse.svg" media="(prefers-color-scheme: dark)">
-          <img src="icons/vampytd-horizontal-color.svg" alt="VampYTD" class="brand-logo" width="102" height="22">
-        </picture>
-        <span class="brand-version" id="version-text">v2.1.0</span>
+        <img src="icons/vampytd-horizontal-color.svg" alt="VampYTD" class="brand-logo logo-light" width="102" height="22">
+        <img src="icons/vampytd-horizontal-reverse.svg" alt="VampYTD" class="brand-logo logo-dark" width="102" height="22">
+        <span class="brand-version" id="version-text">v2.3.0</span>
       </div>
-      <div class="overall-status good" id="overall-status">
-        <span class="dot"></span>
-        <span id="overall-text">Ready</span>
+      <div class="overall-status" id="overall-status" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="overall-text">Checking</span>
       </div>
     </header>
 
-    <!-- YouTube-style Underline Tabs -->
+    <!-- Underline Tabs -->
     <nav class="tabs" role="tablist" aria-label="Sections">
-      <button class="tab active" type="button" role="tab" id="tab-status" aria-selected="true" aria-controls="status-panel" data-panel="status-panel">Status</button>
-      <button class="tab" type="button" role="tab" id="tab-settings" aria-selected="false" aria-controls="settings-panel" data-panel="settings-panel">Settings</button>
-      <button class="tab" type="button" role="tab" id="tab-yt" aria-selected="false" aria-controls="yt-panel" data-panel="yt-panel">YT Tools</button>
+      <button class="tab active" type="button" role="tab" id="tab-status" aria-selected="true" aria-controls="status-panel" data-panel="status-panel" tabindex="0">Status</button>
+      <button class="tab" type="button" role="tab" id="tab-settings" aria-selected="false" aria-controls="settings-panel" data-panel="settings-panel" tabindex="-1">Settings</button>
+      <button class="tab" type="button" role="tab" id="tab-yt" aria-selected="false" aria-controls="yt-panel" data-panel="yt-panel" tabindex="-1">YT tools</button>
     </nav>
 
     <main>
       <!-- Panel 1: Status & Active Video -->
       <section class="panel" id="status-panel" role="tabpanel" aria-labelledby="tab-status">
-        <!-- Empty State Guidance Card (When not on YouTube / Hotstar) -->
+        <!-- Empty State Guidance Card -->
         <div class="empty-media-card" id="empty-media-card" hidden>
           <svg class="empty-media-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
           <div class="empty-media-content">
             <span class="empty-media-title">No active video on this tab</span>
-            <span class="empty-media-sub">Open any YouTube video or Short to download directly</span>
+            <span class="empty-media-sub">Open a YouTube video, Short, playlist, or Hotstar page to download.</span>
           </div>
         </div>
-        <!-- Hero Media Card (Visible when on YouTube / Hotstar) -->
+
+        <!-- Hero Media Card -->
         <div class="hero-media-card" id="active-video-card" hidden>
           <div class="media-card-header">
             <span class="site-badge" id="active-video-badge">YouTube</span>
-            <span class="detected-pill">Detected</span>
+            <span class="context-pill" id="playlist-context-pill" hidden>In a playlist</span>
           </div>
-          <h1 class="active-video-title" id="active-video-title">Detecting video…</h1>
+          <h2 class="active-video-title" id="active-video-title">Detecting video…</h2>
           <div class="media-card-actions">
             <button class="yt-primary-btn" type="button" id="active-download-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 0-1 1v11.586l-4.293-4.293a1 1 0 1 0-1.414 1.414L12 18.414l6.707-6.707a1 1 0 1 0-1.414-1.414L13 14.586V3a1 1 0 0 0-1-1Zm7 18H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2Z"/></svg>
-              <span id="active-download-label">Download Video</span>
+              <svg id="active-download-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a1 1 0 0 0-1 1v11.586l-4.293-4.293a1 1 0 1 0-1.414 1.414L12 18.414l6.707-6.707a1 1 0 1 0-1.414-1.414L13 14.586V3a1 1 0 0 0-1-1Zm7 18H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2Z"/></svg>
+              <span id="active-download-label">Download this video</span>
             </button>
             <button class="playlist-sub-btn" type="button" id="active-download-playlist-btn" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14 0v6l5-3z"/></svg>
-              <span>Download Playlist</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14 0v6l5-3z"/></svg>
+              <span id="active-playlist-label">Download full playlist</span>
             </button>
           </div>
+          <span class="sr-only" id="download-live-region" role="status" aria-live="polite"></span>
         </div>
 
-        <!-- Compact Borderless Connection & Telemetry List -->
-        <div class="section-list">
-          <div class="list-row">
-            <div class="row-meta">
-              <span class="row-title">Native Bridge</span>
-              <span class="row-sub">Local stdio messaging</span>
+        <!-- Compact System Status Accordion (auto-expands only on issues) -->
+        <details class="system-details" id="tools-details">
+          <summary>
+            <div class="summary-left">
+              <span class="chevron-indicator" aria-hidden="true"></span>
+              <div class="row-meta">
+                <span class="row-title">Desktop app &amp; tools</span>
+                <span class="row-sub" id="tools-summary">Checking local bridge…</span>
+              </div>
             </div>
-            <span class="status-pill good" id="native-status">Connected</span>
-          </div>
-
-          <div class="list-row">
-            <div class="row-meta">
-              <span class="row-title">Downloader Stack</span>
-              <span class="row-sub" id="tools-summary">yt-dlp, FFmpeg, JS runtime, FZF</span>
+            <span class="status-pill" id="tools-status">Checking</span>
+          </summary>
+          <div class="system-details-body">
+            <div class="tools-chips-grid">
+              <div class="tool-chip"><span class="tool-name">Desktop app</span> <span class="tool-val" id="native-status">Checking</span></div>
+              <div class="tool-chip"><span class="tool-name">yt-dlp</span> <span class="tool-val" id="ytdlp-status">Checking</span></div>
+              <div class="tool-chip"><span class="tool-name">FFmpeg</span> <span class="tool-val" id="ffmpeg-status">Checking</span></div>
+              <div class="tool-chip"><span class="tool-name">JS runtime</span> <span class="tool-val" id="node-status">Checking</span></div>
             </div>
-            <span class="status-pill good" id="tools-status">Ready</span>
-          </div>
-        </div>
-
-        <!-- Balanced Dependencies Grid -->
-        <details class="tools-accordion" id="tools-details">
-          <summary>View individual dependencies</summary>
-          <div class="tools-chips-grid">
-            <div class="tool-chip"><span class="tool-name">VampYTD</span> <span class="tool-val" id="downloader-status">Checking</span></div>
-            <div class="tool-chip"><span class="tool-name">yt-dlp</span> <span class="tool-val" id="ytdlp-status">Checking</span></div>
-            <div class="tool-chip"><span class="tool-name">FFmpeg</span> <span class="tool-val" id="ffmpeg-status">Checking</span></div>
-            <div class="tool-chip"><span class="tool-name">JS runtime</span> <span class="tool-val" id="node-status">Checking</span></div>
-            <div class="tool-chip span-full"><span class="tool-name">FZF (Optional)</span> <span class="tool-val" id="fzf-status">Optional</span></div>
+            <div class="bridge-help-note" id="bridge-help-note" hidden>
+              VampYTD desktop app is disconnected. Run <code>install.ps1</code> and restart your browser.
+            </div>
           </div>
         </details>
 
-        <!-- Actionable Destination Folder Container -->
+        <!-- Destination Folder -->
         <div class="folder-section">
-          <div class="folder-header">
-            <span class="folder-label">Destination folder</span>
-          </div>
-          <div class="folder-box" id="folder-box" title="Click to copy path">
-            <span class="folder-path" id="download-folder">Checking…</span>
-            <button type="button" class="btn-copy-folder" id="btn-copy-folder" title="Copy folder path to clipboard">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          <span class="folder-label" id="folder-label">Destination folder</span>
+          <div class="folder-box">
+            <span class="folder-path" id="download-folder" aria-labelledby="folder-label">Checking…</span>
+            <button type="button" class="btn-copy-folder" id="btn-copy-folder" aria-label="Copy destination folder path">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               <span id="copy-label">Copy</span>
             </button>
           </div>
         </div>
 
-        <!-- Quiet Secondary Test Connection Button -->
+        <!-- Secondary Test Connection Button -->
         <button class="yt-secondary-btn" type="button" id="test-button">Test connection</button>
         <div class="checked-time" id="checked-time" aria-live="polite"></div>
       </section>
@@ -1029,14 +1028,14 @@
                 <span class="radio-dot" aria-hidden="true"></span>
                 <span class="option-title">Interactive</span>
               </div>
-              <span class="option-meta">Format menu</span>
+              <span class="option-meta">Pick format in terminal</span>
             </div>
             <div class="option-chip" data-mode="quick-max" role="radio" aria-checked="false" tabindex="-1">
               <div class="option-label-group">
                 <span class="radio-dot" aria-hidden="true"></span>
                 <span class="option-title">Quick Max</span>
               </div>
-              <span class="option-meta">Best quality</span>
+              <span class="option-meta">Best available</span>
             </div>
             <div class="option-chip" data-mode="quick-1080p" role="radio" aria-checked="false" tabindex="-1">
               <div class="option-label-group">
@@ -1055,76 +1054,81 @@
           </div>
         </div>
 
-        <!-- Preferred Codec: Auto Hero Pill + Balanced 2x2 Grid -->
+        <!-- Preferred Codec -->
         <div class="settings-group">
           <h2 class="settings-heading" id="codec-label">Preferred codec</h2>
           <div class="codec-container" id="codec-selector" role="radiogroup" aria-labelledby="codec-label">
             <div class="codec-hero codec-chip" data-codec="auto" role="radio" aria-checked="false" tabindex="0">
               <span class="codec-hero-title">Auto</span>
-              <span class="codec-hero-meta">Default (yt-dlp best)</span>
+              <span class="codec-hero-meta">Best available</span>
             </div>
             <div class="codec-grid-2x2">
               <div class="codec-chip" data-codec="av1" role="radio" aria-checked="false" tabindex="-1">
                 <span class="codec-title">AV1</span>
-                <span class="codec-meta">Efficient</span>
+                <span class="codec-meta">Smallest files</span>
               </div>
               <div class="codec-chip" data-codec="vp9" role="radio" aria-checked="false" tabindex="-1">
                 <span class="codec-title">VP9</span>
-                <span class="codec-meta">YouTube</span>
+                <span class="codec-meta">Standard</span>
               </div>
               <div class="codec-chip" data-codec="hevc" role="radio" aria-checked="false" tabindex="-1">
                 <span class="codec-title">HEVC</span>
                 <span class="codec-meta">H.265</span>
               </div>
               <div class="codec-chip" data-codec="h264" role="radio" aria-checked="false" tabindex="-1">
-                <span class="codec-title">H264</span>
-                <span class="codec-meta">Classic</span>
+                <span class="codec-title">H.264</span>
+                <span class="codec-meta">Most compatible</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="cookie-card" id="cookie-drop-zone">
-          <div class="cookie-header-row">
-            <div class="row-meta">
-              <span class="row-title">YouTube Session Cookies</span>
-              <span class="row-sub" id="cookie-status-detail">Checking session...</span>
-            </div>
-            <span class="status-pill" id="cookie-status-badge">Checking</span>
-          </div>
+        <!-- Unified YouTube Cookies Card (YouTube-focused) -->
+        <div class="settings-group">
+          <h2 class="settings-heading">YouTube cookies</h2>
+          <div class="cookie-card" id="cookie-drop-zone">
+            <label class="cookie-toggle-row" for="cookies-toggle">
+              <div class="row-meta">
+                <span class="row-title">Use YouTube cookies</span>
+                <span class="row-sub">Sign in for age-restricted or Premium videos</span>
+              </div>
+              <div class="switch">
+                <input type="checkbox" id="cookies-toggle" role="switch" aria-checked="false" aria-label="Use YouTube cookies">
+                <span class="slider"></span>
+              </div>
+            </label>
 
-          <div class="cookie-actions">
-            <input type="file" id="cookie-file-input" accept=".txt" style="display: none;">
-            <button type="button" class="cookie-btn" id="btn-import-cookies" title="Import Netscape cookies.txt file">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <span>Import File</span>
-            </button>
-            <button type="button" class="cookie-btn btn-clear" id="btn-clear-cookies" title="Clear saved cookies" style="display: none;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-              <span>Clear</span>
-            </button>
-            <span class="cookie-hint" id="cookie-drop-hint">or drag & drop .txt</span>
-          </div>
-        </div>
+            <div class="cookie-divider" aria-hidden="true"></div>
 
-        <div class="section-list">
-          <label class="list-row toggle-row" for="cookies-toggle">
-            <div class="row-meta">
-              <span class="row-title">Use Cookies for Downloads</span>
-              <span class="row-sub">Attach cookies-yt.txt during format analysis & downloads</span>
+            <div class="cookie-header-row">
+              <div class="row-meta">
+                <span class="row-sub" id="cookie-status-detail" aria-live="polite">Checking session…</span>
+              </div>
+              <span class="status-pill" id="cookie-status-badge">Checking</span>
             </div>
-            <div class="switch">
-              <input type="checkbox" id="cookies-toggle" role="switch" aria-checked="false" aria-label="Use cookies">
-              <span class="slider"></span>
+
+            <div class="cookie-actions">
+              <input type="file" id="cookie-file-input" accept=".txt" hidden>
+              <button type="button" class="cookie-btn" id="btn-import-cookies" title="Import Netscape cookies.txt file">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Import file</span>
+              </button>
+              <button type="button" class="cookie-btn btn-clear" id="btn-clear-cookies" title="Remove saved YouTube cookies" hidden>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span id="clear-cookies-label">Clear</span>
+              </button>
+              <span class="cookie-hint" id="cookie-drop-hint">or drop .txt here</span>
             </div>
-          </label>
+
+            <div class="cookie-feedback" id="cookie-feedback" role="status" aria-live="polite" hidden></div>
+          </div>
         </div>
       </section>
 
@@ -1133,33 +1137,33 @@
         <div class="section-list">
           <label class="list-row toggle-row" for="toggle-cinematic-crop">
             <div class="row-meta">
-              <span class="row-title">Cinematic Crop (2.39:1)</span>
-              <span class="row-sub">Crop black bars on widescreen videos (Alt+C)</span>
+              <span class="row-title">Cinematic crop (2.39:1)</span>
+              <span class="row-sub">Fill ultrawide screens on letterboxed videos (Alt+C)</span>
             </div>
             <div class="switch">
-              <input type="checkbox" id="toggle-cinematic-crop" role="switch" aria-checked="false" aria-label="Toggle Cinematic Crop">
+              <input type="checkbox" id="toggle-cinematic-crop" role="switch" aria-checked="false" aria-label="Cinematic crop 2.39:1">
               <span class="slider"></span>
             </div>
           </label>
 
           <label class="list-row toggle-row" for="toggle-block-ambient">
             <div class="row-meta">
-              <span class="row-title">Block Ambient Glow</span>
-              <span class="row-sub">Hide glow effects & annotations to save GPU</span>
+              <span class="row-title">Disable ambient glow</span>
+              <span class="row-sub">Hide YouTube ambient glow and legacy overlays</span>
             </div>
             <div class="switch">
-              <input type="checkbox" id="toggle-block-ambient" role="switch" aria-checked="false" aria-label="Toggle Block Ambient Glow">
+              <input type="checkbox" id="toggle-block-ambient" role="switch" aria-checked="false" aria-label="Disable ambient glow">
               <span class="slider"></span>
             </div>
           </label>
 
           <label class="list-row toggle-row" for="toggle-channel-videos">
             <div class="row-meta">
-              <span class="row-title">Channel 'Videos' Tab First</span>
-              <span class="row-sub">Always open channel links directly on /videos</span>
+              <span class="row-title">Open channels on Videos tab</span>
+              <span class="row-sub">Skip the Home tab when opening YouTube channels</span>
             </div>
             <div class="switch">
-              <input type="checkbox" id="toggle-channel-videos" role="switch" aria-checked="false" aria-label="Toggle Channel Videos First">
+              <input type="checkbox" id="toggle-channel-videos" role="switch" aria-checked="false" aria-label="Open channels on Videos tab">
               <span class="slider"></span>
             </div>
           </label>

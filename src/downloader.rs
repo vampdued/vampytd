@@ -514,8 +514,47 @@ pub fn find_best_audio<'a>(formats: &'a [Format]) -> Option<&'a Format> {
 
 pub fn is_playlist_url(url: &str) -> bool {
     let lower = url.to_lowercase();
+    let path_part = lower.split('?').next().unwrap_or(&lower);
+    path_part.contains("/playlist")
+}
 
-    lower.contains("list=") || lower.contains("/playlist")
+pub fn strip_playlist_params(url: &str) -> String {
+    let (base, query_and_frag) = match url.split_once('?') {
+        Some(parts) => parts,
+        None => return url.to_string(),
+    };
+
+    if base.to_lowercase().contains("/playlist") {
+        return url.to_string();
+    }
+
+    let (query, frag) = match query_and_frag.split_once('#') {
+        Some((q, f)) => (q, Some(f)),
+        None => (query_and_frag, None),
+    };
+
+    let kept: Vec<&str> = query
+        .split('&')
+        .filter(|pair| {
+            if pair.is_empty() {
+                return false;
+            }
+            let key = pair.split('=').next().unwrap_or("").to_lowercase();
+            !matches!(key.as_str(), "list" | "index" | "start_radio" | "pp")
+        })
+        .collect();
+
+    let mut out = if kept.is_empty() {
+        base.to_string()
+    } else {
+        format!("{}?{}", base, kept.join("&"))
+    };
+
+    if let Some(f) = frag {
+        out.push('#');
+        out.push_str(f);
+    }
+    out
 }
 
 pub fn build_format_string(mode: &str, codec: &str, custom_format: Option<&str>) -> String {
@@ -778,6 +817,8 @@ pub fn execute_download(
     }
 
     cmd.arg("-P").arg(&config.download_dir);
+
+    cmd.arg("--no-playlist");
 
     let final_format = build_format_string(mode, codec, format_spec);
 
@@ -1190,5 +1231,23 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(f_https.proto_clean(), "https");
+    }
+
+    #[test]
+    fn test_playlist_url_and_stripping() {
+        assert!(is_playlist_url("https://www.youtube.com/playlist?list=PL123"));
+        assert!(!is_playlist_url("https://www.youtube.com/watch?v=abc&list=PL123"));
+        assert_eq!(
+            strip_playlist_params("https://www.youtube.com/watch?v=abc&list=PL123&index=2"),
+            "https://www.youtube.com/watch?v=abc"
+        );
+        assert_eq!(
+            strip_playlist_params("https://youtu.be/abc?list=RD123&start_radio=1"),
+            "https://youtu.be/abc"
+        );
+        assert_eq!(
+            strip_playlist_params("https://www.youtube.com/playlist?list=PL123"),
+            "https://www.youtube.com/playlist?list=PL123"
+        );
     }
 }

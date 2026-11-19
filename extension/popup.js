@@ -20,35 +20,62 @@ document.addEventListener('DOMContentLoaded', () => {
   const cookieFileInput    = document.getElementById('cookie-file-input');
   const btnImportCookies   = document.getElementById('btn-import-cookies');
   const btnClearCookies    = document.getElementById('btn-clear-cookies');
+  const clearCookiesLabel  = document.getElementById('clear-cookies-label');
   const cookieStatusBadge  = document.getElementById('cookie-status-badge');
   const cookieStatusDetail = document.getElementById('cookie-status-detail');
+  const cookieFeedback     = document.getElementById('cookie-feedback');
 
   const activeVideoCard           = document.getElementById('active-video-card');
   const emptyMediaCard            = document.getElementById('empty-media-card');
   const activeVideoTitle          = document.getElementById('active-video-title');
   const activeVideoBadge          = document.getElementById('active-video-badge');
+  const playlistContextPill       = document.getElementById('playlist-context-pill');
   const activeDownloadBtn         = document.getElementById('active-download-btn');
   const activeDownloadPlaylistBtn = document.getElementById('active-download-playlist-btn');
   const activeDownloadLabel       = document.getElementById('active-download-label');
+  const activePlaylistLabel       = document.getElementById('active-playlist-label');
+  const downloadLiveRegion        = document.getElementById('download-live-region');
 
-  const toolsStatus  = document.getElementById('tools-status');
-  const toolsSummary = document.getElementById('tools-summary');
-  const toolsDetails = document.getElementById('tools-details');
+  const toolsStatus    = document.getElementById('tools-status');
+  const toolsSummary   = document.getElementById('tools-summary');
+  const toolsDetails   = document.getElementById('tools-details');
+  const bridgeHelpNote = document.getElementById('bridge-help-note');
 
   const copyFolderBtn = document.getElementById('btn-copy-folder');
   const copyLabel     = document.getElementById('copy-label');
   const folderEl      = document.getElementById('download-folder');
 
-  // YT Enhancements switches
+  // YT tools switches
   const toggleCinematicCrop = document.getElementById('toggle-cinematic-crop');
-  const toggleBlockAmbient   = document.getElementById('toggle-block-ambient');
-  const toggleChannelVideos  = document.getElementById('toggle-channel-videos');
+  const toggleBlockAmbient  = document.getElementById('toggle-block-ambient');
+  const toggleChannelVideos = document.getElementById('toggle-channel-videos');
 
   let currentTabUrl = '';
+  let currentIsPurePlaylist = false;
+  let clearConfirmTimer = null;
+  let feedbackTimer = null;
 
   const NATIVE_HOST = 'com.vampytd.bridge';
 
-  // Direct native messaging from popup to avoid service worker timeout/closed port errors
+  function isMixListId(listId) {
+    return typeof listId === 'string' && /^rd/i.test(listId.trim());
+  }
+
+  function stripPlaylistParams(rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      const host = u.hostname.toLowerCase();
+      if ((host.includes('youtube.com') || host.includes('youtu.be')) && u.pathname !== '/playlist') {
+        u.searchParams.delete('list');
+        u.searchParams.delete('index');
+        u.searchParams.delete('start_radio');
+        u.searchParams.delete('pp');
+        return u.toString();
+      }
+    } catch (_) {}
+    return rawUrl;
+  }
+
   function sendNative(payload) {
     return new Promise((resolve) => {
       try {
@@ -57,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resolve({ ok: false, error: chrome.runtime.lastError.message });
             return;
           }
-          resolve(response || { ok: false, error: 'No response from bridge' });
+          resolve(response || { ok: false, error: 'No response from desktop app' });
         });
       } catch (err) {
         resolve({ ok: false, error: err.message });
@@ -75,16 +102,12 @@ document.addEventListener('DOMContentLoaded', () => {
     el.className = `tool-val${state ? ` ${state}` : ''}`;
   }
 
-  function renderTool(id, available, optional = false) {
+  function renderTool(id, available) {
     if (available === undefined || available === null) {
       setValue(id, 'Unknown');
       return null;
     } else if (available) {
-      // A string value means "ready with this name" (e.g. the JS runtime name).
       setValue(id, typeof available === 'string' ? available : 'Ready', 'good');
-      return true;
-    } else if (optional) {
-      setValue(id, 'Optional', 'warn');
       return true;
     } else {
       setValue(id, 'Missing', 'bad');
@@ -96,53 +119,62 @@ document.addEventListener('DOMContentLoaded', () => {
     const nativeOK = Boolean(result?.native?.ok);
     const details  = result?.details;
 
-    const nativeStatusEl = document.getElementById('native-status');
-
     if (nativeOK) {
+      setValue('native-status', 'Connected', 'good');
+      if (bridgeHelpNote) bridgeHelpNote.hidden = true;
+    } else {
+      setValue('native-status', 'Offline', 'bad');
+      if (bridgeHelpNote) bridgeHelpNote.hidden = false;
+    }
+
+    const tYtdlp  = renderTool('ytdlp-status',  details?.ytDlp);
+    const tFfmpeg = renderTool('ffmpeg-status', details?.ffmpeg);
+    const jsRuntimeName = details?.jsRuntime || null;
+    const tJS     = renderTool('node-status', jsRuntimeName ? jsRuntimeName : (details ? false : null));
+
+    const allRequiredReady = nativeOK && tYtdlp === true && tFfmpeg === true && tJS === true;
+
+    if (!nativeOK) {
+      overallStatus.className = 'overall-status bad';
+      overallText.textContent = 'Disconnected';
+      if (toolsStatus && toolsSummary) {
+        toolsStatus.textContent = 'Offline';
+        toolsStatus.className = 'status-pill bad';
+        toolsSummary.textContent = 'Desktop app is not reachable';
+      }
+      if (toolsDetails) toolsDetails.open = true;
+    } else if (allRequiredReady) {
       overallStatus.className = 'overall-status good';
       overallText.textContent = 'Ready';
-      if (nativeStatusEl) {
-        nativeStatusEl.textContent = 'Connected';
-        nativeStatusEl.className = 'status-pill good';
-      }
-    } else {
-      overallStatus.className = 'overall-status bad';
-      overallText.textContent = 'Needs repair';
-      if (nativeStatusEl) {
-        nativeStatusEl.textContent = result?.native?.error || 'Offline';
-        nativeStatusEl.className = 'status-pill bad';
-      }
-    }
-
-    const tDownloader = renderTool('downloader-status', details?.downloader);
-    const tYtdlp      = renderTool('ytdlp-status',      details?.ytDlp);
-    const tFfmpeg     = renderTool('ffmpeg-status',     details?.ffmpeg);
-    // Any JS runtime (deno / bun / node) satisfies the requirement.
-    const jsRuntimeName = details?.jsRuntime || null;
-    const tJS         = renderTool('node-status', jsRuntimeName ? jsRuntimeName : null);
-    renderTool('fzf-status', details?.fzf, true);
-
-    const allRequiredReady = (tDownloader === true && tYtdlp === true && tFfmpeg === true && tJS === true);
-
-    if (toolsStatus && toolsSummary) {
-      if (!details) {
-        toolsStatus.textContent = 'Checking';
-        toolsStatus.className = 'status-pill';
-        toolsSummary.textContent = 'Detecting dependencies…';
-      } else if (allRequiredReady) {
-        toolsStatus.textContent = 'All Ready';
+      if (toolsStatus && toolsSummary) {
+        toolsStatus.textContent = 'All ready';
         toolsStatus.className = 'status-pill good';
-        toolsSummary.textContent = 'yt-dlp, FFmpeg, JS runtime, FZF ready';
-      } else {
+        toolsSummary.textContent = `yt-dlp, FFmpeg, ${jsRuntimeName} ready`;
+      }
+      if (toolsDetails) toolsDetails.open = false;
+    } else {
+      overallStatus.className = 'overall-status warn';
+      overallText.textContent = 'Setup needed';
+      const missing = [];
+      if (tYtdlp === false) missing.push('yt-dlp');
+      if (tFfmpeg === false) missing.push('FFmpeg');
+      if (tJS === false) missing.push('JS runtime');
+      if (toolsStatus && toolsSummary) {
         toolsStatus.textContent = 'Attention';
         toolsStatus.className = 'status-pill warn';
-        toolsSummary.textContent = 'One or more tools require setup';
-        if (toolsDetails) toolsDetails.open = true; // Auto-expand when attention is needed
+        toolsSummary.textContent = missing.length
+          ? `Missing: ${missing.join(', ')}`
+          : 'One or more required tools need setup';
       }
+      if (toolsDetails) toolsDetails.open = true;
     }
 
+    const hasValidFolder = Boolean(details?.downloadDir);
     if (folderEl) {
-      folderEl.textContent = details?.downloadDir || 'Unavailable until bridge connects';
+      folderEl.textContent = hasValidFolder ? details.downloadDir : 'Unavailable while disconnected';
+    }
+    if (copyFolderBtn) {
+      copyFolderBtn.disabled = !hasValidFolder;
     }
 
     checkedTime.textContent =
@@ -158,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sendNative({ action: 'diagnostics' }).then((response) => {
       if (!response || !response.ok) {
         renderDiagnostics(null);
-        checkedTime.textContent = response?.error || 'Bridge disconnected';
+        checkedTime.textContent = 'Could not reach VampYTD desktop app';
       } else {
         renderDiagnostics({ ok: true, native: { ok: true }, details: response });
       }
@@ -171,11 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Copy Folder Path to Clipboard ---
   function copyFolderPath() {
     const rawPath = folderEl?.textContent;
-    if (!rawPath || rawPath.startsWith('Unavailable') || rawPath.startsWith('Checking')) return;
+    if (!rawPath || copyFolderBtn?.disabled) return;
 
     navigator.clipboard.writeText(rawPath).then(() => {
-      if (copyLabel) copyLabel.textContent = 'Copied!';
+      if (copyLabel) copyLabel.textContent = 'Copied';
       copyFolderBtn?.classList.add('copied');
+      if (downloadLiveRegion) downloadLiveRegion.textContent = 'Destination folder path copied';
       setTimeout(() => {
         if (copyLabel) copyLabel.textContent = 'Copy';
         copyFolderBtn?.classList.remove('copied');
@@ -183,80 +216,102 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(() => {});
   }
 
-  // --- Cookie Management Handlers ---
+  // --- Inline Cookie Feedback (replaces blocking alert/confirm) ---
+  function showCookieFeedback(message, isError = false) {
+    if (!cookieFeedback) return;
+    if (feedbackTimer) clearTimeout(feedbackTimer);
+    cookieFeedback.textContent = message;
+    cookieFeedback.className = `cookie-feedback ${isError ? 'bad' : 'good'}`;
+    cookieFeedback.hidden = false;
+    feedbackTimer = setTimeout(() => {
+      cookieFeedback.hidden = true;
+    }, 5000);
+  }
+
+  function resetClearButton() {
+    if (clearConfirmTimer) {
+      clearTimeout(clearConfirmTimer);
+      clearConfirmTimer = null;
+    }
+    if (btnClearCookies) {
+      delete btnClearCookies.dataset.confirming;
+      btnClearCookies.classList.remove('confirming');
+    }
+    if (clearCookiesLabel) clearCookiesLabel.textContent = 'Clear';
+  }
+
+  // --- Cookie Management Handlers (YouTube-focused) ---
   async function refreshCookieStatus() {
     if (!cookieStatusBadge) return;
+    resetClearButton();
     const response = await sendNative({ action: 'cookie_status' });
     if (!response || !response.ok) {
       cookieStatusBadge.textContent = 'Offline';
       cookieStatusBadge.className = 'status-pill bad';
       if (cookieStatusDetail) {
-        cookieStatusDetail.textContent = response?.error ? `Bridge: ${response.error}` : 'Bridge disconnected';
+        cookieStatusDetail.textContent = 'Desktop app is disconnected';
       }
-      if (btnClearCookies) btnClearCookies.style.display = 'none';
+      if (btnClearCookies) btnClearCookies.hidden = true;
       return;
     }
 
     const yt = response.youtube;
     if (yt && yt.exists) {
       if (yt.valid) {
-        cookieStatusBadge.textContent = 'Active';
+        cookieStatusBadge.textContent = 'Signed in';
         cookieStatusBadge.className = 'status-pill good';
         const daysText = (yt.daysRemaining !== null && yt.daysRemaining !== undefined)
-          ? `${yt.daysRemaining}d remaining`
-          : 'Active';
+          ? `${yt.daysRemaining} ${yt.daysRemaining === 1 ? 'day' : 'days'} left`
+          : 'Active session';
         if (cookieStatusDetail) {
-          cookieStatusDetail.textContent = `Valid session (${daysText}) • ${yt.totalCookies} tokens`;
+          cookieStatusDetail.textContent = `Active session • ${daysText}`;
         }
       } else {
         cookieStatusBadge.textContent = 'Expired';
         cookieStatusBadge.className = 'status-pill bad';
-        if (cookieStatusDetail) cookieStatusDetail.textContent = 'Session expired • Please re-import';
+        if (cookieStatusDetail) cookieStatusDetail.textContent = 'Session expired • Re-import cookies.txt';
       }
-      if (btnClearCookies) btnClearCookies.style.display = 'inline-flex';
+      if (btnClearCookies) btnClearCookies.hidden = false;
     } else {
-      cookieStatusBadge.textContent = 'Missing';
+      cookieStatusBadge.textContent = 'Not set';
       cookieStatusBadge.className = 'status-pill';
-      if (cookieStatusDetail) cookieStatusDetail.textContent = 'No cookies-yt.txt loaded';
-      if (btnClearCookies) btnClearCookies.style.display = 'none';
+      if (cookieStatusDetail) cookieStatusDetail.textContent = 'No YouTube cookies saved';
+      if (btnClearCookies) btnClearCookies.hidden = true;
     }
   }
 
   function handleCookieFile(file) {
     if (!file) return;
-    if (!file.name.endsWith('.txt')) {
-      alert('Please select a Netscape format cookie text file (.txt).');
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      showCookieFeedback('Please choose a Netscape cookies .txt file.', true);
       return;
     }
 
-    if (cookieStatusDetail) cookieStatusDetail.textContent = 'Sanitizing & saving…';
+    if (cookieStatusDetail) cookieStatusDetail.textContent = 'Cleaning & saving…';
     const reader = new FileReader();
     reader.onload = async (e) => {
       const content = e.target.result;
       const res = await sendNative({ action: 'import_cookies', content, target: 'youtube' });
       if (!res || !res.ok) {
-        const err = res?.error || 'Failed importing cookies';
-        alert(`Cookie import failed: ${err}`);
+        const err = res?.error || 'Could not import cookies.';
+        showCookieFeedback(err, true);
         refreshCookieStatus();
         return;
       }
 
-      // Auto-enable cookies toggle if it was off
       if (cookiesToggle && !cookiesToggle.checked) {
         cookiesToggle.checked = true;
         syncSwitchAria(cookiesToggle);
         chrome.storage.local.set({ enableCookies: true });
       }
 
+      showCookieFeedback('YouTube cookies imported and cleaned.', false);
       refreshCookieStatus();
     };
     reader.readAsText(file);
   }
 
-  const folderBox = document.getElementById('folder-box');
   if (copyFolderBtn) copyFolderBtn.addEventListener('click', copyFolderPath);
-  if (folderEl) folderEl.addEventListener('click', copyFolderPath);
-  if (folderBox) folderBox.addEventListener('click', copyFolderPath);
 
   // --- Active Tab Video & Theme Detection ---
   function inspectActiveTab() {
@@ -277,22 +332,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const host = u.hostname.toLowerCase();
 
         if (host.includes('youtube.com') || host.includes('youtu.be')) {
-          if (u.pathname === '/playlist' && u.searchParams.has('list')) {
+          const listId = u.searchParams.get('list');
+          if (u.pathname === '/playlist' && listId) {
             isSupported = true;
             isPurePlaylist = true;
             siteName = 'Playlist';
           } else if (u.pathname === '/watch' || u.pathname.startsWith('/shorts/') || host === 'youtu.be') {
             isSupported = true;
             siteName = u.pathname.startsWith('/shorts/') ? 'Shorts' : 'YouTube';
-            if (u.pathname === '/watch' && u.searchParams.has('list')) {
+            if ((u.pathname === '/watch' || host === 'youtu.be') && listId && !isMixListId(listId)) {
               hasPlaylist = true;
             }
           }
 
-          // Check if YouTube is currently in Dark Mode to match automatically
+          // Match YouTube's active Light/Dark theme cleanly in both directions
           chrome.tabs.sendMessage(activeTab.id, { action: 'getTheme' }, (res) => {
-            if (!chrome.runtime.lastError && res?.isDark) {
-              document.documentElement.dataset.theme = 'dark';
+            if (!chrome.runtime.lastError && typeof res?.isDark === 'boolean') {
+              document.documentElement.dataset.theme = res.isDark ? 'dark' : 'light';
             }
           });
         } else if (host.includes('hotstar.com') || host.includes('jiohotstar.com')) {
@@ -301,6 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (_) {}
 
+      currentIsPurePlaylist = isPurePlaylist;
+
       if (isSupported && activeVideoCard) {
         activeVideoCard.hidden = false;
         if (emptyMediaCard) emptyMediaCard.hidden = true;
@@ -308,21 +366,20 @@ document.addEventListener('DOMContentLoaded', () => {
         cleanTitle = cleanTitle.replace(/\s*-\s*YouTube$/, '').replace(/\s*\|\s*Hotstar$/, '');
         activeVideoTitle.textContent = cleanTitle;
         activeVideoBadge.textContent = siteName;
-        if (siteName === 'Hotstar') {
-          activeVideoBadge.classList.add('hotstar');
-        } else {
-          activeVideoBadge.classList.remove('hotstar');
-        }
+        activeVideoBadge.classList.toggle('hotstar', siteName === 'Hotstar');
 
         if (isPurePlaylist) {
-          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download Playlist';
+          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download full playlist';
           if (activeDownloadPlaylistBtn) activeDownloadPlaylistBtn.hidden = true;
+          if (playlistContextPill) playlistContextPill.hidden = true;
         } else if (hasPlaylist) {
-          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download Video';
+          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download this video';
           if (activeDownloadPlaylistBtn) activeDownloadPlaylistBtn.hidden = false;
+          if (playlistContextPill) playlistContextPill.hidden = false;
         } else {
-          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download Video';
+          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Download this video';
           if (activeDownloadPlaylistBtn) activeDownloadPlaylistBtn.hidden = true;
+          if (playlistContextPill) playlistContextPill.hidden = true;
         }
       } else {
         if (activeVideoCard) activeVideoCard.hidden = true;
@@ -335,30 +392,33 @@ document.addEventListener('DOMContentLoaded', () => {
     activeDownloadBtn.addEventListener('click', () => {
       if (!currentTabUrl) return;
 
+      const isPlaylistDownload = currentIsPurePlaylist;
+      const defaultLabel = isPlaylistDownload ? 'Download full playlist' : 'Download this video';
+      const targetUrl = isPlaylistDownload ? currentTabUrl : stripPlaylistParams(currentTabUrl);
+
       activeDownloadBtn.disabled = true;
-      activeDownloadBtn.innerHTML = `<span>Sending…</span>`;
+      if (activeDownloadLabel) activeDownloadLabel.textContent = 'Sending…';
 
-      const isPlaylistDownload = (activeDownloadLabel?.textContent === 'Download Playlist');
-
-      chrome.runtime.sendMessage({ action: 'download', url: currentTabUrl, playlist: isPlaylistDownload }, (response) => {
+      chrome.runtime.sendMessage({ action: 'download', url: targetUrl, playlist: isPlaylistDownload }, (response) => {
         const err = chrome.runtime.lastError;
         const ok = !err && Boolean(response?.ok);
 
+        activeDownloadBtn.classList.remove('state-ok', 'state-err');
         if (ok) {
-          activeDownloadBtn.innerHTML = `<span>✓ Sent to VampYTD</span>`;
-          activeDownloadBtn.style.background = '#059669';
+          const msg = isPlaylistDownload ? 'Playlist sent' : 'Sent to VampYTD';
+          if (activeDownloadLabel) activeDownloadLabel.textContent = `✓ ${msg}`;
+          activeDownloadBtn.classList.add('state-ok');
+          if (downloadLiveRegion) downloadLiveRegion.textContent = msg;
         } else {
-          activeDownloadBtn.innerHTML = `<span>⚠ Bridge offline</span>`;
-          activeDownloadBtn.style.background = '#dc2626';
+          if (activeDownloadLabel) activeDownloadLabel.textContent = 'Desktop app offline';
+          activeDownloadBtn.classList.add('state-err');
+          if (downloadLiveRegion) downloadLiveRegion.textContent = 'VampYTD desktop app is offline';
         }
 
         setTimeout(() => {
           activeDownloadBtn.disabled = false;
-          activeDownloadBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a1 1 0 0 0-1 1v11.586l-4.293-4.293a1 1 0 1 0-1.414 1.414L12 18.414l6.707-6.707a1 1 0 1 0-1.414-1.414L13 14.586V3a1 1 0 0 0-1-1Zm7 18H5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2Z"/></svg>
-            <span id="active-download-label">${isPlaylistDownload ? 'Download Playlist' : 'Download Video'}</span>
-          `;
-          activeDownloadBtn.style.background = '';
+          activeDownloadBtn.classList.remove('state-ok', 'state-err');
+          if (activeDownloadLabel) activeDownloadLabel.textContent = defaultLabel;
         }, 2200);
       });
     });
@@ -369,30 +429,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!currentTabUrl) return;
 
       activeDownloadPlaylistBtn.disabled = true;
-      activeDownloadPlaylistBtn.innerHTML = `<span>Sending…</span>`;
+      if (activePlaylistLabel) activePlaylistLabel.textContent = 'Sending…';
 
       chrome.runtime.sendMessage({ action: 'download', url: currentTabUrl, playlist: true }, (response) => {
         const err = chrome.runtime.lastError;
         const ok = !err && Boolean(response?.ok);
 
+        activeDownloadPlaylistBtn.classList.remove('state-ok', 'state-err');
         if (ok) {
-          activeDownloadPlaylistBtn.innerHTML = `<span>✓ Playlist Sent</span>`;
-          activeDownloadPlaylistBtn.style.borderColor = '#059669';
-          activeDownloadPlaylistBtn.style.color = '#059669';
+          if (activePlaylistLabel) activePlaylistLabel.textContent = '✓ Playlist sent';
+          activeDownloadPlaylistBtn.classList.add('state-ok');
+          if (downloadLiveRegion) downloadLiveRegion.textContent = 'Playlist sent to VampYTD';
         } else {
-          activeDownloadPlaylistBtn.innerHTML = `<span>⚠ Bridge offline</span>`;
-          activeDownloadPlaylistBtn.style.borderColor = '#dc2626';
-          activeDownloadPlaylistBtn.style.color = '#dc2626';
+          if (activePlaylistLabel) activePlaylistLabel.textContent = 'Desktop app offline';
+          activeDownloadPlaylistBtn.classList.add('state-err');
+          if (downloadLiveRegion) downloadLiveRegion.textContent = 'VampYTD desktop app is offline';
         }
 
         setTimeout(() => {
           activeDownloadPlaylistBtn.disabled = false;
-          activeDownloadPlaylistBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4zm14 0v6l5-3z"/></svg>
-            <span>Download Playlist</span>
-          `;
-          activeDownloadPlaylistBtn.style.borderColor = '';
-          activeDownloadPlaylistBtn.style.color = '';
+          activeDownloadPlaylistBtn.classList.remove('state-ok', 'state-err');
+          if (activePlaylistLabel) activePlaylistLabel.textContent = 'Download full playlist';
         }, 2200);
       });
     });
@@ -402,7 +459,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.setAttribute('aria-checked', el.checked ? 'true' : 'false');
   }
 
-  // --- Broadcast setting updates to active tab ---
   function broadcastSettingsUpdate(patch) {
     chrome.tabs?.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs?.[0];
@@ -415,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Tab switching with Keyboard Navigation ---
+  // --- Tab Switching with Keyboard Navigation ---
   const tabs = Array.from(document.querySelectorAll('.tab'));
 
   function activateTab(tab) {
@@ -482,7 +538,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         nextOption = options[(idx - 1 + options.length) % options.length];
       } else if (e.key === ' ' || e.key === 'Enter') {
-        const focused = document.activeElement.closest(itemSelector);
         if (focused) nextOption = focused;
       }
 
@@ -573,8 +628,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnClearCookies) {
     btnClearCookies.addEventListener('click', async () => {
-      if (!confirm('Clear saved YouTube cookies?')) return;
+      if (btnClearCookies.dataset.confirming !== 'true') {
+        btnClearCookies.dataset.confirming = 'true';
+        btnClearCookies.classList.add('confirming');
+        if (clearCookiesLabel) clearCookiesLabel.textContent = 'Confirm clear?';
+        clearConfirmTimer = setTimeout(resetClearButton, 4000);
+        return;
+      }
+
+      resetClearButton();
       await sendNative({ action: 'clear_cookies', target: 'youtube' });
+      showCookieFeedback('Saved YouTube cookies cleared.', false);
       refreshCookieStatus();
     });
   }

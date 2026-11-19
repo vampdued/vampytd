@@ -34,7 +34,7 @@ vampytd/
 │   ├── content.js        # YouTube in-page UI enhancements & context menus
 │   ├── manifest.json     # Extension manifest with fixed deterministic ID
 │   ├── popup.html/js     # Extension popup dashboard, tool diagnostics & Inter fonts
-│   ├── fonts/            # Offline bundled Inter variable & OTF font family
+│   ├── fonts/            # Offline bundled Inter OTF font family
 │   └── icons/            # Theme-adaptive SVG vector logos & PNG icons
 ├── assets/               # Brand assets, multi-res .ico, and social cards
 ├── build.rs              # Windows resource compiler embedding .ico into vampytd.exe
@@ -108,7 +108,7 @@ When running in interactive mode, the terminal opens the stream selector:
 | `/` | Focus search bar (type filter text) |
 | `v` | Filter to Video-only streams |
 | `a` | Filter to Audio-only streams |
-| `h` | Filter to HD+ streams (720p and above) |
+| `h` | Filter to HD+ streams (1080p and above) |
 | `c` | Reset active filter |
 | `Space` | Tag / untag highlighted stream for custom multi-stream merge |
 | `Enter` | Download highlighted stream (or combined tagged streams) |
@@ -137,8 +137,11 @@ vampytd https://www.youtube.com/watch?v=VIDEO_ID --mode quick-4k
 
 ### Playlists
 ```powershell
+# Single video from a playlist URL (default — strips playlist params)
+vampytd "https://www.youtube.com/watch?v=VIDEO_ID&list=PLAYLIST_ID"
+
 # Full playlist
-vampytd https://www.youtube.com/playlist?list=PLAYLIST_ID --playlist
+vampytd "https://www.youtube.com/playlist?list=PLAYLIST_ID" --playlist
 
 # Specific playlist items (e.g. items 1 to 5)
 vampytd https://www.youtube.com/playlist?list=PLAYLIST_ID --playlist --items 1-5

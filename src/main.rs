@@ -45,6 +45,10 @@ struct Cli {
     #[arg(long)]
     playlist: bool,
 
+    /// Force single-video download and strip playlist parameters
+    #[arg(long)]
+    no_playlist: bool,
+
     /// Playlist item range to download (e.g. 1-10, 5, 8:)
     #[arg(long)]
     items: Option<String>,
@@ -120,7 +124,7 @@ fn handle_cookies_cli(action: CookieCommands) -> Result<()> {
 
             println!("\x1b[32;1m[✓] Saved Destination:\x1b[0m  {}", status.path.unwrap_or_default());
             println!(
-                "\x1b[32;1m[✓] Sanitization:\x1b[0m       Kept {} valid tokens (stripped {} ad/trackers)",
+                "\x1b[32;1m[✓] Sanitization:\x1b[0m       Kept {} valid cookies (stripped {} ad/trackers)",
                 status.sanitized_cookies,
                 status.total_cookies.saturating_sub(status.sanitized_cookies)
             );
@@ -132,7 +136,7 @@ fn handle_cookies_cli(action: CookieCommands) -> Result<()> {
         CookieCommands::Status => {
             println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
             println!("\x1b[1;37m>> VampYTD Cookie Health Audit\x1b[0m");
-            println!("\x1b[38;2;98;98;110m--------------------------------------------------------------------------------\x1b[0m");
+            println!("\x1b[38;2;164;164;176m--------------------------------------------------------------------------------\x1b[0m");
 
             for target in &["youtube", "hotstar"] {
                 let status = cookies::get_cookie_status(target)?;
@@ -143,20 +147,20 @@ fn handle_cookies_cli(action: CookieCommands) -> Result<()> {
                 } else if status.exists {
                     "\x1b[33;1m[!] EXPIRED/INVALID\x1b[0m"
                 } else {
-                    "\x1b[38;2;98;98;110m[-] MISSING\x1b[0m"
+                    "\x1b[38;2;164;164;176m[-] MISSING\x1b[0m"
                 };
 
                 println!("\x1b[1;37m[{}]\x1b[0m {}", display_name, badge);
                 if status.exists {
                     println!("  Path:        {}", status.path.unwrap_or_default());
                     println!("  Status:      {}", status.status_label);
-                    println!("  Tokens:      {} active cookies", status.total_cookies);
+                    println!("  Cookies:     {} active cookies", status.total_cookies);
                     if *target == "youtube" {
                         let auth_info = match (status.has_login_info, status.has_sid) {
                             (true, true) => "\x1b[32mLOGIN_INFO (✓), SID (✓)\x1b[0m",
                             (true, false) => "\x1b[33mLOGIN_INFO (✓), SID (missing)\x1b[0m",
                             (false, true) => "\x1b[33mLOGIN_INFO (missing), SID (✓)\x1b[0m",
-                            (false, false) => "\x1b[31mMissing Core Auth Tokens\x1b[0m",
+                            (false, false) => "\x1b[31mMissing Core Auth Cookies\x1b[0m",
                         };
                         println!("  Auth Keys:   {}", auth_info);
                     }
@@ -169,21 +173,21 @@ fn handle_cookies_cli(action: CookieCommands) -> Result<()> {
             println!("\x1b[38;2;255;10;33;1m================================================================================\x1b[0m");
         }
         CookieCommands::Clear { target } => {
-            println!("\x1b[38;2;255;10;33;1m>> VampYTD Cookie Purge\x1b[0m");
+            println!("\x1b[38;2;255;10;33;1m>> VampYTD Cookie Clear\x1b[0m");
             if target == "all" {
                 let y = cookies::clear_cookie("youtube")?;
                 let j = cookies::clear_cookie("hotstar")?;
                 if y || j {
-                    println!("\x1b[32;1m[✓] All cookies cleared successfully.\x1b[0m");
+                    println!("\x1b[32;1m[✓] All cookies cleared.\x1b[0m");
                 } else {
-                    println!("\x1b[38;2;98;98;110m[-] No saved cookies found to delete.\x1b[0m");
+                    println!("\x1b[38;2;164;164;176m[-] No saved cookies found to delete.\x1b[0m");
                 }
             } else {
                 let deleted = cookies::clear_cookie(&target)?;
                 if deleted {
-                    println!("\x1b[32;1m[✓] Cleared {} cookies successfully.\x1b[0m", target);
+                    println!("\x1b[32;1m[✓] Cleared {} cookies.\x1b[0m", target);
                 } else {
-                    println!("\x1b[38;2;98;98;110m[-] No cookie file found for {}.\x1b[0m", target);
+                    println!("\x1b[38;2;164;164;176m[-] No cookie file found for {}.\x1b[0m", target);
                 }
             }
         }
@@ -229,9 +233,7 @@ fn run_cli(cli: Cli) -> Result<()> {
         println!("\x1b[33m>> Warning: ffmpeg not found. Stream merging may fail.\x1b[0m");
     }
 
-
-
-    let url = match cli.url {
+    let raw_url = match cli.url {
         Some(u) => u,
         None => {
             println!("Enter video or playlist URL: ");
@@ -249,13 +251,21 @@ fn run_cli(cli: Cli) -> Result<()> {
     let config = config::Config::default_config();
 
     // Dual Mode Discovery: CLI auto-loads discovered cookies unless --no-cookies was passed
-    let use_cookies = if cli.no_cookies {
+    let use_cookies = !cli.no_cookies;
+
+    // Default /watch?v=...&list=... URLs to single-video unless --playlist is passed;
+    // dedicated /playlist URLs still trigger playlist mode unless --no-playlist is passed.
+    let is_playlist = if cli.no_playlist {
         false
     } else {
-        true
+        cli.playlist || downloader::is_playlist_url(&raw_url)
     };
 
-    let is_playlist = cli.playlist || downloader::is_playlist_url(&url);
+    let url = if is_playlist {
+        raw_url
+    } else {
+        downloader::strip_playlist_params(&raw_url)
+    };
 
     if is_playlist {
         if cli.mode == "interactive" {
@@ -279,7 +289,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                     &config,
                     use_cookies,
                 )?;
-                notify::send_notification("Playlist Download Complete", title);
+                notify::send_notification("Playlist download complete", title);
             } else {
                 println!("\x1b[33m>> Playlist download cancelled.\x1b[0m");
             }
@@ -289,7 +299,7 @@ fn run_cli(cli: Cli) -> Result<()> {
                 "quick-4k" => "2160p",
                 _ => "best",
             };
-            set_terminal_title("Downloading Playlist...");
+            set_terminal_title("Downloading playlist...");
             let (fmt, is_audio) = downloader::build_playlist_format(preset, &cli.codec);
             print_download_banner(&url, None, &fmt, &config.download_dir, is_audio);
             downloader::execute_playlist_download(
@@ -301,7 +311,10 @@ fn run_cli(cli: Cli) -> Result<()> {
                 &config,
                 use_cookies,
             )?;
-            notify::send_notification("Playlist Download Complete", &url);
+            notify::send_notification(
+                "Playlist download complete",
+                &format!("Saved to {}", config.download_dir.display()),
+            );
         }
     } else {
         if cli.mode == "interactive" && cli.format.is_none() {
@@ -324,12 +337,12 @@ fn run_cli(cli: Cli) -> Result<()> {
                     &config,
                     use_cookies,
                 )?;
-                notify::send_notification("Download Complete", &meta.title);
+                notify::send_notification("Download complete", &meta.title);
             } else {
                 println!("\x1b[33m>> Selection cancelled.\x1b[0m");
             }
         } else {
-            set_terminal_title("Downloading Video...");
+            set_terminal_title("Downloading video...");
             let final_fmt = downloader::build_format_string(&cli.mode, &cli.codec, cli.format.as_deref());
             let is_audio = final_fmt == "ba" || final_fmt == "ba/b" || final_fmt.starts_with("ba[");
             print_download_banner(&url, None, &final_fmt, &config.download_dir, is_audio);
@@ -342,7 +355,10 @@ fn run_cli(cli: Cli) -> Result<()> {
                 &config,
                 use_cookies,
             )?;
-            notify::send_notification("Download Complete", &url);
+            notify::send_notification(
+                "Download complete",
+                &format!("Saved to {}", config.download_dir.display()),
+            );
         }
     }
 
