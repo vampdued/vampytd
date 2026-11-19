@@ -1,11 +1,32 @@
+# Build & compilation artifacts
 /target/
 **/*.rs.bk
 *.pdb
 *.exe
 Cargo.lock
-.env
+
+# Environments & secrets
+.env*
+cookies*.txt
+*.cookies
+*.token
+
+# IDE & Editor artifacts
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
-.agents
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Archives & logs
 *.zip
+*.tar.gz
+*.log
+
+# Agent & workflow internal configs
+.agents

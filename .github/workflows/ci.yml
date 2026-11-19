@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  check-and-test:
+    name: Check & Test
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Dependencies
+        uses: swatinem/rust-cache@v2
+
+      - name: Run Cargo Check
+        run: cargo check --verbose
+
+      - name: Run Test Suite
+        run: cargo test --verbose

@@ -68,6 +68,23 @@ vampytd/
 
 ---
 
+## 📋 Prerequisites
+
+VampYTD leverages dedicated media engines for streaming and multiplexing. You can install the recommended tools on Windows with `winget`:
+
+```powershell
+# Required: Downloader and media multiplexer
+winget install yt-dlp Gyan.FFmpeg
+
+# Optional: Multi-connection download accelerator
+winget install aria2
+
+# Optional: JavaScript runtime for player extraction
+winget install OpenJS.NodeJS.LTS
+```
+
+---
+
 ## 🚀 One-Line Direct Install (via GitHub CLI)
 
 If you have the GitHub CLI (`gh`) logged in, you can download, extract, and register the latest VampYTD release binary and Chrome extension with a single command:
@@ -169,6 +186,45 @@ vampytd cookies clear
 vampytd bridge
 ```
 *Invoked automatically by the browser extension via standard I/O length-prefixed JSON.*
+
+---
+
+## 🔒 Security & Privacy
+
+- **Local Execution**: All media operations and downloads execute directly on your local system.
+- **Zero Telemetry**: VampYTD does not collect, log, or send any telemetry, usage patterns, or analytics.
+- **Sanitized Authentication**: The cookie sanitizer actively deletes third-party tracking, ad-targeting, and analytics identifiers before storing YouTube session cookies.
+- **Direct Native Messaging**: Extension communication operates over standard OS input/output pipes with no local web server or open listening ports.
+
+---
+
+## ❓ Troubleshooting & FAQ
+
+<details>
+<summary><b>Extension displays "Offline" or fails to connect to bridge</b></summary>
+
+1. Confirm that `install.ps1` was executed to register the host in the Windows Registry.
+2. Fully restart your browser (close all browser windows) so native messaging host registrations take effect.
+3. Check `chrome://extensions` to ensure the unpacked extension is loaded from `%LOCALAPPDATA%\VampYTD\extension`.
+</details>
+
+<details>
+<summary><b>Video downloads succeed but lack audio or fail during merge</b></summary>
+
+High-resolution streams require `ffmpeg` to merge separate video and audio tracks. Verify that `ffmpeg` is present in your system PATH by running `ffmpeg -version`. To install:
+```powershell
+winget install Gyan.FFmpeg
+```
+</details>
+
+<details>
+<summary><b>How do I keep yt-dlp up to date?</b></summary>
+
+Run the included update command in your terminal:
+```powershell
+vampytd update
+```
+</details>
 
 ---
 
