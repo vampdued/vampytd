@@ -85,33 +85,64 @@ winget install OpenJS.NodeJS.LTS
 
 ---
 
-## 🚀 One-Line Direct Install (via GitHub CLI)
+## 🚀 Quick Install (Windows PowerShell)
 
-If you have the GitHub CLI (`gh`) logged in, you can download, extract, and register the latest VampYTD release binary and Chrome extension with a single command:
+Because VampYTD is hosted on a public GitHub repository, you can download, extract, and install the latest pre-compiled release binary and browser extension with a single PowerShell command—no GitHub CLI, Git, or Rust installation required:
 
+```powershell
+$zip = "$env:TEMP\VampYTD.zip"; $dir = "$env:TEMP\VampYTD-Install"; $url = ((Invoke-RestMethod "https://api.github.com/repos/vampdued/vampytd/releases/latest").assets | Where-Object { $_.name -like "*.zip" } | Select-Object -First 1).browser_download_url; Invoke-WebRequest -Uri $url -OutFile $zip; Expand-Archive -Path $zip -DestinationPath $dir -Force; & "$dir\install.ps1" -SkipBuild; Remove-Item -Path $zip, $dir -Recurse -Force
+```
+
+> **Note**: This automatically deploys `vampytd.exe` and the extension to `%LOCALAPPDATA%\VampYTD`, sets up the Native Messaging host registry keys, registers Windows notification handlers, and adds VampYTD to your user PATH.
+
+<details>
+<summary><b>Alternative: Manual Release Download</b></summary>
+
+1. Download the latest `VampYTD-v*-windows-x64.zip` from [GitHub Releases](https://github.com/vampdued/vampytd/releases/latest).
+2. Extract the ZIP archive to a folder.
+3. Open PowerShell inside the extracted folder and run:
+   ```powershell
+   .\install.ps1 -SkipBuild
+   ```
+</details>
+
+<details>
+<summary><b>Alternative: Install via GitHub CLI (gh)</b></summary>
+
+If you have the GitHub CLI (`gh`) installed, you can download and install directly:
 ```powershell
 gh release download -R vampdued/vampytd --pattern "*.zip" --dir "$env:TEMP\VampYTD-Install" --clobber; Expand-Archive "$env:TEMP\VampYTD-Install\*.zip" -DestinationPath "$env:TEMP\VampYTD-Install\extracted" -Force; & "$env:TEMP\VampYTD-Install\extracted\install.ps1" -SkipBuild; Remove-Item "$env:TEMP\VampYTD-Install" -Recurse -Force
 ```
+</details>
 
 ---
 
-## 🛠️ Local Source Installation
+## 🛠️ Build & Install from Source
 
-Run the PowerShell installer to build the release binary, copy it to `%LOCALAPPDATA%\VampYTD`, and register the Native Messaging host in the Windows Registry:
+To build from source using the public Git repository:
 
 ```powershell
+# 1. Clone the public repository
+git clone https://github.com/vampdued/vampytd.git
+cd vampytd
+
+# 2. Build the release binary and register Native Messaging
 .\install.ps1
 ```
 
-To skip rebuilding the binary when deploying changes:
+*(Requires the [Rust toolchain](https://rustup.rs)).*
+
+To skip rebuilding the binary when re-deploying configuration or extension changes:
 ```powershell
 .\install.ps1 -SkipBuild
 ```
 
-### Loading the Chrome Extension:
-1. Open **`chrome://extensions`** (or **`edge://extensions`** / **`brave://extensions`**).
-2. Enable **Developer mode** (top-right toggle).
-3. Click **Load unpacked** and select the `vampytd\extension` folder.
+### Loading the Browser Extension:
+1. Open **`chrome://extensions`** (or **`edge://extensions`** / **`brave://extensions`** / **`vivaldi://extensions`**).
+2. Enable **Developer mode** (toggle in the top-right corner).
+3. Click **Load unpacked** and select the extension directory:
+   - **Prebuilt / Quick Install**: `%LOCALAPPDATA%\VampYTD\extension`
+   - **Local Source Repo**: `vampytd\extension` (or `%LOCALAPPDATA%\VampYTD\extension`)
 
 ---
 
